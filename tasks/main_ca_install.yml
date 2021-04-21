@@ -1,5 +1,5 @@
 ---
-# Copyright 2021, BBC.
+# Copyright 2021, BBC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- project:
-    templates:
-      - check-requirements
-      - openstack-ansible-deploy-infra_lxc-jobs
-      - openstack-ansible-linters-jobs
-      - publish-openstack-docs-pti
-      - build-release-notes-jobs-python3
+- name: Include {{ pki_method }} CA variables
+  include_vars:
+    file: "{{ pki_method ~ '_ca.yml' }}"
+
+- name: Install certificate authorities
+  include_tasks: "{{ pki_method }}/install_ca.yml"
+  when: pki_install_ca | length > 0

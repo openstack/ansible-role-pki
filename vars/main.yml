@@ -1,0 +1,40 @@
+---
+# Copyright 2021, BBC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Gather CA definitions from hostvars
+pki_ca_defs: |-
+  {% if pki_authorities is defined %}
+  {%   set _cas = pki_authorities %}
+  {% else %}
+  {%   set _ca_search_hits = vars.keys() | select('match', '^' ~ pki_search_authorities_pattern ~ '.*') %}
+  {%   set _cas = [] %}
+  {%   for _ca in _ca_search_hits | default([]) %}
+  {%     set _ = _cas.extend(lookup('vars', _ca)) %}
+  {%   endfor %}
+  {% endif %}
+  {{ _cas }}
+
+# Gather certificate definitions from hostvars
+pki_cert_defs: |-
+  {% if pki_certificates is defined %}
+  {%   set _certs = pki_certificates %}
+  {% else %}
+  {%   set _cert_search_hits = vars.keys() | select('match', '^' ~ pki_search_certificates_pattern ~ '.*') %}
+  {%   set _certs = [] %}
+  {%   for _cert in _cert_search_hits | default([]) %}
+  {%     set _ = _certs.extend(lookup('vars', _cert)) %}
+  {%   endfor %}
+  {% endif %}
+  {{ _certs }}

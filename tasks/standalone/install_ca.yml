@@ -13,5 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## APT Cache options
-cache_timeout: 600
+- name: Copy CA certificates
+  copy:
+    src: "{{ item.src | default(pki_dir ~ '/roots/' ~ item.name ~ '/certs/' ~ item.name ~ '.crt') }}"
+    dest: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ item.filename | default(item.name ~ '.crt') }}"
+  when:
+    - (item.condition is defined and item.condition | bool) or (item.condition is not defined)
+  register: ca_copy
+  loop: "{{ pki_install_ca }}"
+
+- name: Update CA store
+  command: "{{ pki_ca_install_command[ansible_facts['pkg_mgr']] }}"
+  when:
+    - ca_copy is changed

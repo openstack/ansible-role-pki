@@ -12,3 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# directories for certificate authorities on the CA host
+pki_ca_dirs:
+  - path: "{{ pki_dir }}"
+  - path: "{{ pki_dir ~ '/roots' }}"
+
+pki_ca_install_command:
+  apt: "update-ca-certificates"
+  dnf: "update-ca-trust extract"

@@ -1,5 +1,4 @@
----
-# Copyright 2021, BBC.
+# Copyright 2021, BBC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,10 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- project:
-    templates:
-      - check-requirements
-      - openstack-ansible-deploy-infra_lxc-jobs
-      - openstack-ansible-linters-jobs
-      - publish-openstack-docs-pti
-      - build-release-notes-jobs-python3
+# when the created CA certificates are changed
+- name: ca cert changed
+  meta: noop
+  when: false
+
+# when the created server certificates are changed
+- name: cert changed
+  meta: noop
+  when: false
+
+# when a certificate is installed onto a server
+- name: cert installed
+  meta: noop
+  when: false

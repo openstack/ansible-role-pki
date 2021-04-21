@@ -1,5 +1,5 @@
 ---
-# Copyright 2021, BBC.
+# Copyright 2021, BBC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,10 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- project:
-    templates:
-      - check-requirements
-      - openstack-ansible-deploy-infra_lxc-jobs
-      - openstack-ansible-linters-jobs
-      - publish-openstack-docs-pti
-      - build-release-notes-jobs-python3
+# directories for server certificates on the CA host
+_pki_cert_dirs:
+  - path: "{{ pki_dir }}"
+  - path: "{{ pki_dir ~ '/certs' }}"
+    mode: "0744"
+  - path: "{{ pki_dir ~ '/certs/csr' }}"
+    mode: "0700"
+  - path: "{{ pki_dir ~ '/certs/private' }}"
+    mode: "0700"
+  - path: "{{ pki_dir ~ '/certs/certs' }}"
+    mode: "0444"
