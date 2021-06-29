@@ -15,6 +15,7 @@
 
 - name: Create certificate {{ cert.name }}
   vars:
+    ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
     _cert_file: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '.crt' }}"
     _cert_chain_file: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '-chain.crt' }}"
     _ca_file: "{{ pki_dir ~ '/roots/' ~ cert.signed_by ~ '/certs/' ~ cert.signed_by ~ '.crt' }}"
