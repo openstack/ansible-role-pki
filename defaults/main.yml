@@ -105,6 +105,9 @@ pki_regen_cert: ''
 # host where the generated PKI files are kept
 pki_setup_host: localhost
 
+# Python interpreter that will be used during cert generation
+pki_setup_host_python_interpreter: "{{ (pki_setup_host == 'localhost') | ternary(ansible_playbook_python, ansible_facts['python']['executable']) }}"
+
 # base directory for the CA and server certificates
 pki_dir: "/etc/pki"
 

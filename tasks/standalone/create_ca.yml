@@ -16,6 +16,7 @@
 - name: Create certificate {{ cert.name }}
   vars:
     next_serial_no: "{{ serial_no['content'] | b64decode | int + 1  }}"
+    ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
   delegate_to: "{{ pki_setup_host }}"
   block:
 
