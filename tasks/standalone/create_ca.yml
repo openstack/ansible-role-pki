@@ -28,13 +28,13 @@
         mode: "{{ item.mode | default(omit) }}"
       with_items:
         - path: "{{ ca_dir }}"
-          mode: "0744"
+          mode: "0755"
         - path: "{{ ca_dir ~ '/csr' }}"
           mode: "0700"
         - path: "{{ ca_dir ~ '/private' }}"
           mode: "0700"
         - path: "{{ ca_dir ~ '/certs' }}"
-          mode: "0444"
+          mode: "0755"
 
     - name: Initialise the serial number for {{ ca.name }}
       copy:
