@@ -13,16 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Copy CA certificates
-  copy:
+- name: Slurp up CA certificates from pki setup host ({{ pki_setup_host }})
+  delegate_to: "{{ pki_setup_host }}"
+  slurp:
     src: "{{ item.src | default(pki_dir ~ '/roots/' ~ item.name ~ '/certs/' ~ item.name ~ '.crt') }}"
-    dest: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ item.filename | default(item.name ~ '.crt') }}"
+  register: _ca_slurp
+  run_once: true
   when:
     - (item.condition is defined and item.condition | bool) or (item.condition is not defined)
-  register: ca_copy
   loop: "{{ pki_install_ca }}"
+
+- name: Copy CA certificates to target host
+  copy:
+    content: "{{ item.content | b64decode }}"
+    dest: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ item.item.filename | default(item.item.name ~ '.crt') }}"
+  register: ca_copy
+  loop: "{{ _ca_slurp.results | default([]) }}"
+  when: item.skipped is not defined
 
 - name: Update CA store
   command: "{{ pki_ca_install_command[ansible_facts['pkg_mgr']] }}"
   when:
     - ca_copy is changed
+
