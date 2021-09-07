@@ -47,13 +47,20 @@
   run_once: true
   loop: "{{ pki_install_certificates | default([]) }}"
 
+- name: Create certificate destination directories
+  file:
+    path: "{{ item.dest | dirname }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ pki_install_certificates | default([]) }}"
+
 - name: Install Server certificates to targets
   copy:
     content: "{{ install.content | b64decode }}"
     dest: "{{ install.item.dest }}"
     owner: "{{ install.item.owner | default(omit) }}"
     group: "{{ install.item.group | default(omit) }}"
-    mode: "0644"
+    mode: "{{ install.item.mode | default('0644') }}"
   loop: "{{ _cert_slurp.results }}"
   loop_control:
     loop_var: install
