@@ -25,6 +25,7 @@
     - name: Generate certificate private key for {{ cert.name }}
       openssl_privatekey:
         path: "{{ cert_dir ~ '/private/' ~ cert.name ~ '.key.pem' }}"
+        force: "{{ pki_regen_cert == cert.name or ((pki_regen_cert | lower) == 'true') }}"
       register: cert_privkey
 
     - name: Create the CSR for {{ cert.name }}
@@ -53,6 +54,7 @@
         ownca_path: "{{ _ca_file }}"
         ownca_privatekey_path: "{{ pki_dir ~ '/roots/' ~ cert.signed_by ~ '/private/' ~ cert.signed_by ~ '.key.pem' }}"
         provider: ownca
+        force: "{{ pki_regen_cert == cert.name or ((pki_regen_cert | lower) == 'true') }}"
       register: cert_crt
       when:
         - cert.provider == 'ownca'
@@ -75,4 +77,4 @@
     - name: Create certificate chain for {{ cert.name }}
       shell:
         cmd: "cat {{ _cert_file }} {{ _ca_file }} > {{ _cert_chain_file }}"
-        creates: "{{ _cert_chain_file }}"
+        creates: "{{ (cert_crt is not changed) | ternary(_cert_chain_file, omit) }}"
