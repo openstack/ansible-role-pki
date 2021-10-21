@@ -35,4 +35,3 @@
   command: "{{ pki_ca_install_command[ansible_facts['pkg_mgr']] }}"
   when:
     - ca_copy is changed
-

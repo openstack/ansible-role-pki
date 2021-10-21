@@ -35,6 +35,7 @@
         basic_constraints_critical: yes
         basic_constraints: "{{ cert.basic_constraints | default(omit) }}"
         key_usage: "{{ cert.key_usage | default(omit) }}"
+        extended_key_usage: "{{ cert.extended_key_usage | default(omit) }}"
         subject_alt_name: "{{ cert.san | default(omit) }}"
         country_name: "{{ ca.country_name | default(omit) }}"
         state_or_province_name: "{{ ca.state_or_province_name | default(omit) }}"
