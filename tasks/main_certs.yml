@@ -44,7 +44,6 @@
   slurp:
     src: "{{ item.src }}"
   register: _cert_slurp
-  run_once: true
   loop: "{{ pki_install_certificates | default([]) }}"
 
 - name: Create certificate destination directories
