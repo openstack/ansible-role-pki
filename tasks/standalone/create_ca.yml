@@ -124,3 +124,21 @@
         content: "{{ ca_cert_info | to_nice_yaml }}"
         dest: "{{ (ca_selfsigned_crt.filename | default(ca_ownca_crt.filename)) ~ '.info' }}"
       when: ca_ownca_crt is changed or ca_selfsigned_crt is changed
+
+    - name: Check if intermediate certificate chain exists
+      stat:
+        path: "{{ ca_cert_prefix ~ '-chain.crt' }}"
+      register: chain_result
+      when:
+        - ca.provider == 'ownca'
+
+    - name: Create intermediate certificate chain
+      vars:
+        ownca_path: "{{ pki_dir ~ '/roots/' ~ ca.signed_by ~ '/certs/' ~ ca.signed_by ~ '.crt' }}"
+        cert_path: "{{ ca_cert_prefix ~ '.crt' }}"
+        cert_chain_path: "{{ ca_cert_prefix ~ '-chain.crt' }}"
+      shell:
+        cmd: "cat {{ cert_path }} {{ ownca_path }} > {{ cert_chain_path }}"
+      when:
+        - ca_ownca_crt is changed or not (chain_result.stat.exists | default(true))
+        - ca.provider == 'ownca'
