@@ -46,13 +46,16 @@
   register: _cert_slurp
   run_once: true
   loop: "{{ pki_install_certificates | default([]) }}"
+  when: item.condition | default('True')
 
 - name: Create certificate destination directories
   file:
-    path: "{{ item.dest | dirname }}"
+    path: "{{ install.item.dest | dirname }}"
     state: directory
     mode: "0755"
-  loop: "{{ pki_install_certificates | default([]) }}"
+  loop: "{{ _cert_slurp.results }}"
+  loop_control:
+    loop_var: install
 
 - name: Install Server certificates to targets
   copy:

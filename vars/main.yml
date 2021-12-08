@@ -24,7 +24,7 @@ pki_ca_defs: |-
   {%     set _ = _cas.extend(lookup('vars', _ca)) %}
   {%   endfor %}
   {% endif %}
-  {{ _cas }}
+  {{ _cas | rejectattr('condition', 'false') }}
 
 # Gather certificate definitions from hostvars
 pki_cert_defs: |-
@@ -37,4 +37,4 @@ pki_cert_defs: |-
   {%     set _ = _certs.extend(lookup('vars', _cert)) %}
   {%   endfor %}
   {% endif %}
-  {{ _certs }}
+  {{ _certs | rejectattr('condition', 'false') }}
