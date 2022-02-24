@@ -19,9 +19,7 @@
     src: "{{ item.src | default(pki_dir ~ '/roots/' ~ item.name ~ '/certs/' ~ item.name ~ '.crt') }}"
   register: _ca_slurp
   run_once: true
-  when:
-    - (item.condition is defined and item.condition | bool) or (item.condition is not defined)
-  loop: "{{ pki_install_ca }}"
+  loop: "{{ _pki_install_ca_defs }}"
 
 - name: Copy CA certificates to target host
   copy:

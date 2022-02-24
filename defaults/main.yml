@@ -14,8 +14,10 @@
 # limitations under the License.
 
 # CA certificates to create
-# Setting this variable will disable searching for other vars containing authorities
-# pki_authorities: []
+pki_authorities: []
+
+# Global enable/disable of CA generation
+pki_create_ca: true
 
 # Variable name pattern to search ansible vars for other authority definitions
 pki_search_authorities_pattern: "pki_authorities_"
@@ -64,6 +66,9 @@ pki_search_authorities_pattern: "pki_authorities_"
 #
 pki_install_ca: []
 
+# Variable name pattern to search ansible vars for other certificate definitions
+pki_search_install_ca_pattern: "pki_install_ca_"
+
 # set this to the name of a CA to regenerate, or to 'true' to regenerate all
 pki_regen_ca: ''
 
@@ -73,8 +78,7 @@ pki_trust_store_location:
   dnf: /etc/pki/ca-trust/source/anchors/
 
 # Server certificates to create
-# Setting this variable will disable searching for other vars containing certificates
-# pki_certificates: []
+pki_certificates: []
 
 # Variable name pattern to search ansible vars for other certificate definitions
 pki_search_certificates_pattern: "pki_certificates_"
@@ -119,6 +123,9 @@ pki_cert_dirs: "{{ _pki_cert_dirs }}"
 
 # certificates to install
 pki_install_certificates: []
+
+# Variable name pattern to search ansible vars for other certificate definitions
+pki_search_install_certificates_pattern: "pki_install_certificates_"
 
 # Example variable for installation of server certificates with optional user supplied cert override
 # pki_install_certificates:

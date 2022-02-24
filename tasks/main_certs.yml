@@ -31,7 +31,7 @@
 
 - name: Create Server certificates
   include_tasks: "{{ pki_method }}/create_cert.yml"
-  loop: "{{ pki_cert_defs }}"
+  loop: "{{ _pki_certificates_defs }}"
   loop_control:
     loop_var: cert
   vars:
@@ -44,8 +44,7 @@
   slurp:
     src: "{{ item.src }}"
   register: _cert_slurp
-  loop: "{{ pki_install_certificates | default([]) }}"
-  when: item.condition | default('True')
+  loop: "{{ _pki_install_certificates_defs }}"
 
 - name: Create certificate destination directories
   file:

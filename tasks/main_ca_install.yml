@@ -19,4 +19,4 @@
 
 - name: Install certificate authorities
   include_tasks: "{{ pki_method }}/install_ca.yml"
-  when: pki_install_ca | length > 0
+  when: _pki_install_ca_defs | length > 0
