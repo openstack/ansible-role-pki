@@ -4,6 +4,8 @@ galaxy_info:
   company: City Networks, BBC
   license: Apache2
   min_ansible_version: 2.10
+  namespace: openstack
+  role_name: pki
   platforms:
     - name: Ubuntu
       versions:

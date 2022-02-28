@@ -1,6 +1,8 @@
 ---
+
 - name: Install PKI
-  hosts: localhost
-  user: root
-  roles:
-    - role: "pki"
+  hosts: all
+  tasks:
+    - name: "Include pki role"
+      ansible.builtin.include_role:
+        name: "{{ playbook_dir | dirname | basename }}"

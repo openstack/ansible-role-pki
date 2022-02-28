@@ -1,0 +1,84 @@
+---
+- name: Verify
+  hosts: all
+  vars:
+    pki_trust_store_location:
+      apt: /usr/local/share/ca-certificates/
+      dnf: /etc/pki/ca-trust/source/anchors/
+  tasks:
+
+    # Check that certificate authorities are installed (or absent) at the correct path
+    - stat:
+        path: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ functional_ca_name_1 }}.crt"
+      register: ca_1_stat
+
+    - stat:
+        path: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ functional_ca_name_2 }}.crt"
+      register: ca_2_stat
+
+    - stat:
+        path: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ functional_ca_name_3 }}.crt"
+      register: ca_3_stat
+
+    - assert:
+        that:
+          - ca_1_stat.stat.exists
+          - not ca_2_stat.stat.exists
+          - ca_3_stat.stat.exists
+
+    # Check that certificates are installed (or absent) at the correct path
+    - stat:
+        path: "{{ functional_install_cert_1_dest }}"
+      register: cert_1_stat
+
+    - stat:
+        path: "{{ functional_install_chain_1_dest }}"
+      register: chain_1_stat
+
+    - stat:
+        path: "{{ functional_install_key_1_dest }}"
+      register: key_1_stat
+
+    - stat:
+        path: "{{ functional_install_cert_2_dest }}"
+      register: cert_2_stat
+
+    - stat:
+        path: "{{ functional_install_chain_2_dest }}"
+      register: chain_2_stat
+
+    - stat:
+        path: "{{ functional_install_key_2_dest }}"
+      register: key_2_stat
+
+    - stat:
+        path: "{{ functional_install_cert_3_dest }}"
+      register: cert_3_stat
+
+    - stat:
+        path: "{{ functional_install_chain_3_dest }}"
+      register: chain_3_stat
+
+    - stat:
+        path: "{{ functional_install_key_3_dest }}"
+      register: key_3_stat
+
+    - assert:
+        that:
+          - cert_1_stat.stat.exists
+          - chain_1_stat.stat.exists
+          - key_1_stat.stat.exists
+          - cert_2_stat.stat.exists
+          - key_2_stat.stat.exists
+          - not cert_3_stat.stat.exists
+          - not chain_3_stat.stat.exists
+          - not key_3_stat.stat.exists
+
+    # Check that certificates can validate against the installed CA
+    - name: Validate server certificate against system trust store
+      command: certtool --verify --infile "{{ functional_install_chain_1_dest }}"
+      changed_when: false
+
+    - name: Validate server certificate against system trust store
+      command: certtool --verify --infile "{{ functional_install_chain_2_dest }}"
+      changed_when: false

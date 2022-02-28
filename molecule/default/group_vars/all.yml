@@ -1,0 +1,188 @@
+---
+
+molecule_packages:
+  debian:
+    - ca-certificates
+    - python3-cryptography
+    - gnutls-bin
+    - iproute2
+  redhat:
+    - ca-certificates
+    - python3-cryptography
+    - gnutls-utils
+    - iproute
+
+pki_setup_host: "{{ inventory_hostname }}"
+
+functional_ca_name_1: "ExampleCorpRoot"
+
+# Example self-signed certificate authority
+# Using the default variable
+pki_authorities:
+ - name: "{{ functional_ca_name_1 }}"
+   provider: selfsigned
+   basic_constraints: "CA:TRUE"
+   cn: "Example Corp Root CA"
+   email_address: "pki@example.com"
+   country_name: "GB"
+   state_or_province_name: "England"
+   organization_name: "Example Corporation"
+   organizational_unit_name: "IT Security"
+   key_usage:
+     - digitalSignature
+     - cRLSign
+     - keyCertSign
+   not_after: "+3650d"
+ - name: "ExampleCorpIntermediate"
+   provider: ownca
+   basic_constraints: "CA:TRUE,pathlen:0"
+   cn: "Example Corp Openstack Infrastructure Intermediate CA"
+   email_address: "pki@example.com"
+   country_name: "GB"
+   state_or_province_name: "England"
+   organization_name: "Example Corporation"
+   organizational_unit_name: "IT Security"
+   key_usage:
+     - digitalSignature
+     - cRLSign
+     - keyCertSign
+   not_after: "+3650d"
+   signed_by: "ExampleCorpRoot"
+
+# Custom CA generation search pattern
+pki_search_authorities_pattern: "foo_authorities_"
+
+# Certificate authority to cerate from a custom variable
+functional_ca_name_2: "FooAuthorityNotInstalled"
+functional_ca_name_3: "FooAuthorityInstalled"
+
+foo_authorities_variable:
+  - name: "{{ functional_ca_name_2 }}"
+    country: "GB"
+    state_or_province_name: "England"
+    organization_name: "Example Corporation"
+    organizational_unit_name: "IT Security"
+    cn: "FooAutorityNotInstalled"
+    provider: selfsigned
+    basic_constraints: "CA:TRUE"
+    key_usage:
+      - digitalSignature
+      - keyCertSign
+    not_after: "+3650d"
+    condition: false
+  - name: "{{ functional_ca_name_3 }}"
+    country: "GB"
+    state_or_province_name: "England"
+    organization_name: "Example Corporation"
+    organizational_unit_name: "IT Security"
+    cn: "FooAutorityInstalled"
+    provider: selfsigned
+    basic_constraints: "CA:TRUE"
+    key_usage:
+      - digitalSignature
+      - keyCertSign
+    not_after: "+3650d"
+    condition: true
+
+# install the root CA certificate
+pki_install_ca:
+  - name: "ExampleCorpRoot"
+
+# Custom CA install search pattern
+pki_search_install_ca_pattern: "foo_install_ca_"
+
+# CA to install from a custom variable
+foo_install_ca_variable:
+  - name: "FooAuthorityInstalled"
+
+# Certificates to create from the default variable
+pki_certificates:
+  - name: "{{ ansible_facts['hostname'] }}_1"
+    provider: ownca
+    cn: "{{ ansible_facts['hostname'] }}"
+    san: "{{ 'DNS:' ~ ansible_facts['hostname'] }}"
+    signed_by: "ExampleCorpIntermediate"
+
+# Custom certificate generation search pattern
+pki_search_certificates_pattern: "foo_certificates_"
+
+# Certificates to create from a custom variable, with conditionals
+foo_certificates_variable:
+  - name: "{{ ansible_facts['hostname'] }}_2"
+    provider: ownca
+    cn: "{{ ansible_facts['hostname'] }}"
+    san: "{{ 'DNS:' ~ ansible_facts['hostname'] }}"
+    signed_by: "ExampleCorpIntermediate"
+    condition: true
+  - name: "{{ ansible_facts['hostname'] }}_3"
+    provider: ownca
+    cn: "{{ ansible_facts['hostname'] }}"
+    san: "{{ 'DNS:' ~ ansible_facts['hostname'] }}"
+    signed_by: "ExampleCorpIntermediate"
+    condition: false
+
+# Certificates to install from the default variable
+functional_install_cert_1_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_1.crt' }}"
+functional_install_chain_1_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_1-chain.crt' }}"
+functional_install_key_1_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_1.key.pem' }}"
+
+pki_install_certificates:
+  - src: "{{ pki_dir ~ '/certs/certs/' ~ ansible_facts['hostname'] ~ '_1.crt' }}"
+    dest: "{{ functional_install_cert_1_dest }}"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+  - src: "{{ pki_dir ~ '/certs/certs/' ~ ansible_facts['hostname'] ~ '_1-chain.crt' }}"
+    dest: "{{ functional_install_chain_1_dest }}"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+  - src: "{{ pki_dir ~ '/certs/private/' ~ ansible_facts['hostname'] ~ '_1.key.pem' }}"
+    dest: "{{ functional_install_key_1_dest }}"
+    owner: "root"
+    group: "root"
+    mode: "0640"
+
+# Custom certificate installation search pattern
+pki_search_install_certificates_pattern: "foo_install_certificates_"
+
+# Certificates to isntall from a custom variable, with conditionals
+functional_install_cert_2_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_2.crt' }}"
+functional_install_chain_2_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_2-chain.crt' }}"
+functional_install_key_2_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_2.key.pem' }}"
+
+functional_install_cert_3_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_3.crt' }}"
+functional_install_chain_3_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_3-chain.crt' }}"
+functional_install_key_3_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_3.key.pem' }}"
+
+foo_install_certificates_variable:
+  - src: "{{ pki_dir ~ '/certs/certs/' ~ ansible_facts['hostname'] ~ '_2.crt' }}"
+    dest: "{{ functional_install_cert_2_dest }}"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    condition: true
+  - src: "{{ pki_dir ~ '/certs/certs/' ~ ansible_facts['hostname'] ~ '_2-chain.crt' }}"
+    dest: "{{ functional_install_chain_2_dest }}"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    condition: true
+  - src: "{{ pki_dir ~ '/certs/private/' ~ ansible_facts['hostname'] ~ '_2.key.pem' }}"
+    dest: "{{ functional_install_key_2_dest }}"
+    owner: "root"
+    group: "root"
+    mode: "0640"
+    condition: true
+  - src: "{{ pki_dir ~ '/certs/certs/' ~ ansible_facts['hostname'] ~ '_3.crt' }}"
+    dest: "{{ functional_install_cert_3_dest }}"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    condition: false
+  - src: "{{ pki_dir ~ '/certs/private/' ~ ansible_facts['hostname'] ~ '_3.key.pem' }}"
+    dest: "{{ functional_install_key_3_dest }}"
+    owner: "root"
+    group: "root"
+    mode: "0640"
+    condition: false

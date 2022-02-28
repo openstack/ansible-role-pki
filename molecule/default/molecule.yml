@@ -1,0 +1,35 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    force: ${GALAXY_FORCE:-false}
+
+driver:
+  name: docker
+
+platforms:
+  - name: "pki-${MOLECULE_SCENARIO_NAME}"
+    image: "${DOCKER_REGISTRY:-quay.io/gotmax23}/${DOCKER_IMAGE_TAG:-debian-systemd:bookworm}"
+    command: ${DOCKER_COMMAND:-""}
+    pre_build_image: true
+    privileged: true
+    systemd: true
+
+provisioner:
+  name: ansible
+  lint:
+    name: ansible-lint
+  playbooks:
+    prepare: prepare.yml
+    converge: ../../examples/playbook.yml
+    verify: verify.yml
+  inventory:
+    links:
+      group_vars: ./group_vars/
+  config_options:
+    defaults:
+      inject_facts_as_vars: false
+
+scenario:
+  name: default
