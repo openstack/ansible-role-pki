@@ -61,6 +61,7 @@
         - cert_csr is changed
       notify:
         - cert changed
+      ignore_errors: "{{ ansible_check_mode }}"
 
     - name: Get certificate info for {{ cert.name }}
       openssl_certificate_info:

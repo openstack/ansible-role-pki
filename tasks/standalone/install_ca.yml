@@ -20,6 +20,7 @@
   register: _ca_slurp
   run_once: true
   loop: "{{ _pki_install_ca_defs }}"
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Copy CA certificates to target host
   copy:
@@ -28,6 +29,7 @@
   register: ca_copy
   loop: "{{ _ca_slurp.results | default([]) }}"
   when: item.skipped is not defined
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Update CA store
   command: "{{ pki_ca_install_command[ansible_facts['pkg_mgr']] }}"

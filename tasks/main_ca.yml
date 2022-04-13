@@ -27,6 +27,7 @@
     - "{{ pki_ca_dirs }}"
   delegate_to: "{{ pki_setup_host }}"
   when: pki_create_ca | bool
+  check_mode: no
 
 - name: Create certificate authorities
   include_tasks: "{{ pki_method }}/create_ca.yml"

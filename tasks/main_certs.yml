@@ -28,6 +28,7 @@
   when: pki_create_certificates | default(true)
   delegate_to: "{{ pki_setup_host }}"
   run_once: yes
+  check_mode: no
 
 - name: Create Server certificates
   include_tasks: "{{ pki_method }}/create_cert.yml"
@@ -45,6 +46,7 @@
     src: "{{ item.src }}"
   register: _cert_slurp
   loop: "{{ _pki_install_certificates_defs }}"
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Create certificate destination directories
   file:
@@ -66,5 +68,6 @@
   loop_control:
     loop_var: install
   no_log: true
+  ignore_errors: "{{ ansible_check_mode }}"
   notify:
     - cert installed
