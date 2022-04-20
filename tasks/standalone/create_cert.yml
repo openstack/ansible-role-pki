@@ -23,13 +23,13 @@
   block:
 
     - name: Generate certificate private key for {{ cert.name }}
-      openssl_privatekey:
+      community.crypto.openssl_privatekey:
         path: "{{ cert_dir ~ '/private/' ~ cert.name ~ '.key.pem' }}"
         force: "{{ pki_regen_cert == cert.name or ((pki_regen_cert | lower) == 'true') }}"
       register: cert_privkey
 
     - name: Create the CSR for {{ cert.name }}
-      openssl_csr:
+      community.crypto.openssl_csr:
         path: "{{ cert_dir ~ '/csr/' ~ cert.name ~ '.csr' }}"
         privatekey_path: "{{ cert_privkey.filename }}"
         common_name: "{{ cert.cn | default(omit) }}"
@@ -64,7 +64,7 @@
       ignore_errors: "{{ ansible_check_mode }}"
 
     - name: Get certificate info for {{ cert.name }}
-      openssl_certificate_info:
+      community.crypto.x509_certificate_info:
         path: "{{ cert_crt.filename }}"
       register: cert_info
       when: cert_crt is changed

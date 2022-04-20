@@ -43,7 +43,7 @@
         force: no
 
     - name: Generate CA private key for {{ ca.name }}
-      openssl_privatekey:
+      community.crypto.openssl_privatekey:
         path: "{{ ca_dir ~ '/private/' ~ ca.name ~ '.key.pem' }}"
       register: ca_privkey
 
@@ -53,7 +53,7 @@
       register: serial_no
 
     - name: Create the CA CSR for {{ ca.name }}
-      openssl_csr:
+      community.crypto.openssl_csr:
         path: "{{ ca_dir }}/csr/ca_csr-{{ next_serial_no  }}.csr"
         privatekey_path: "{{ ca_privkey.filename }}"
         common_name: "{{ ca.cn }}"
@@ -77,7 +77,7 @@
       when: ca_csr is changed
 
     - name: Sign the selfsigned Root CA CSR for {{ ca.name }}
-      openssl_certificate:
+      community.crypto.x509_certificate:
         path: "{{ ca_cert_prefix ~ '-' ~ next_serial_no ~ '.crt' }}"
         csr_path: "{{ ca_csr.filename }}"
         provider: 'selfsigned'
@@ -92,7 +92,7 @@
 
     - name: Sign the intermediate CA CSR for {{ ca.name }}
       vars:
-      openssl_certificate:
+      community.crypto.x509_certificate:
         path: "{{ ca_cert_prefix ~ '-' ~ next_serial_no ~ '.crt' }}"
         csr_path: "{{ ca_csr.filename }}"
         provider: 'ownca'
@@ -114,7 +114,7 @@
       when: ca_ownca_crt is changed or ca_selfsigned_crt is changed
 
     - name: Get certificate info for {{ ca.name }}
-      openssl_certificate_info:
+      community.crypto.x509_certificate_info:
         path: "{{ ca_selfsigned_crt.filename | default(ca_ownca_crt.filename) }}"
       register: ca_cert_info
       when: ca_ownca_crt is changed or ca_selfsigned_crt is changed
