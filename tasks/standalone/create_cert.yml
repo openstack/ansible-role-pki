@@ -25,6 +25,8 @@
     - name: Generate certificate private key for {{ cert.name }}
       community.crypto.openssl_privatekey:
         path: "{{ cert_dir ~ '/private/' ~ cert.name ~ '.key.pem' }}"
+        passphrase: "{{ cert.key_passphrase | default(omit) }}"
+        cipher: "{{ ('key_passphrase' in cert and cert.key_passphrase) | ternary('auto', omit) }}"
         force: "{{ pki_regen_cert == cert.name or ((pki_regen_cert | lower) == 'true') }}"
       register: cert_privkey
 
@@ -32,6 +34,7 @@
       community.crypto.openssl_csr:
         path: "{{ cert_dir ~ '/csr/' ~ cert.name ~ '.csr' }}"
         privatekey_path: "{{ cert_privkey.filename }}"
+        privatekey_passphrase: "{{ cert.key_passphrase | default(omit) }}"
         common_name: "{{ cert.cn | default(omit) }}"
         basic_constraints_critical: yes
         basic_constraints: "{{ cert.basic_constraints | default(omit) }}"
@@ -53,6 +56,7 @@
         csr_path: "{{ cert_csr.filename }}"
         ownca_path: "{{ _ca_file }}"
         ownca_privatekey_path: "{{ pki_dir ~ '/roots/' ~ cert.signed_by ~ '/private/' ~ cert.signed_by ~ '.key.pem' }}"
+        ownca_privatekey_passphrase: "{{ cert.ownca_key_passphrase | default(omit) }}"
         provider: ownca
         force: "{{ pki_regen_cert == cert.name or ((pki_regen_cert | lower) == 'true') }}"
       register: cert_crt

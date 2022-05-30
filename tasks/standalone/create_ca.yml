@@ -45,6 +45,8 @@
     - name: Generate CA private key for {{ ca.name }}
       community.crypto.openssl_privatekey:
         path: "{{ ca_dir ~ '/private/' ~ ca.name ~ '.key.pem' }}"
+        passphrase: "{{ ca.key_passphrase | default(omit) }}"
+        cipher: "{{ ('key_passphrase' in ca and ca.key_passphrase) | ternary('auto', omit) }}"
       register: ca_privkey
 
     - name: Read the serial number for {{ ca.name }}
@@ -56,6 +58,7 @@
       community.crypto.openssl_csr:
         path: "{{ ca_dir }}/csr/ca_csr-{{ next_serial_no  }}.csr"
         privatekey_path: "{{ ca_privkey.filename }}"
+        privatekey_passphrase: "{{ ca.key_passphrase | default(omit) }}"
         common_name: "{{ ca.cn }}"
         basic_constraints_critical: yes
         basic_constraints: "{{ ca.basic_constraints }}"
@@ -82,6 +85,7 @@
         csr_path: "{{ ca_csr.filename }}"
         provider: 'selfsigned'
         privatekey_path: "{{ ca_privkey.filename }}"
+        privatekey_passphrase: "{{ ca.key_passphrase | default(omit) }}"
         selfsigned_not_after: "{{ ca.not_after }}"
       register: ca_selfsigned_crt
       when:
@@ -97,6 +101,7 @@
         csr_path: "{{ ca_csr.filename }}"
         provider: 'ownca'
         ownca_privatekey_path: "{{ pki_dir ~ '/roots/' ~ ca.signed_by ~ '/private/' ~ ca.signed_by ~ '.key.pem' }}"
+        ownca_privatekey_passphrase: "{{ ca.ownca_key_passphrase | default(omit) }}"
         ownca_path: "{{ pki_dir ~ '/roots/' ~ ca.signed_by ~ '/certs/' ~ ca.signed_by ~ '.crt' }}"
         ownca_not_after: "{{ ca.not_after }}"
       register: ca_ownca_crt
