@@ -28,6 +28,7 @@
         passphrase: "{{ cert.key_passphrase | default(omit) }}"
         cipher: "{{ ('key_passphrase' in cert and cert.key_passphrase) | ternary('auto', omit) }}"
         force: "{{ pki_regen_cert == cert.name or ((pki_regen_cert | lower) == 'true') }}"
+        format: "{{ cert.key_format | default(omit) }}"
       register: cert_privkey
 
     - name: Create the CSR for {{ cert.name }}
