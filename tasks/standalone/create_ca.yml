@@ -58,6 +58,7 @@
         path: "{{ ca_dir ~ '/private/' ~ ca.name ~ '.key.pem' }}"
         passphrase: "{{ ca.key_passphrase | default(omit) }}"
         cipher: "{{ ('key_passphrase' in ca and ca.key_passphrase) | ternary('auto', omit) }}"
+        backup: "{{ ca.backup | default(True) }}"
       register: ca_privkey
 
     - name: Read the serial number for {{ ca.name }}
@@ -80,6 +81,7 @@
         organization_name: "{{ ca.organizataion_name | default(omit) }}"
         organizational_unit_name: "{{ ca.organization_unit_name | default(omit) }}"
         subject: "{{ cert.subject | default(omit) }}"
+        backup: "{{ ca.backup | default(True) }}"
       register: ca_csr
       when:
         - ca_privkey is changed or pki_regen_ca == ca.name or (pki_regen_ca | lower) == 'true'
@@ -98,6 +100,7 @@
         privatekey_path: "{{ ca_privkey.filename }}"
         privatekey_passphrase: "{{ ca.key_passphrase | default(omit) }}"
         selfsigned_not_after: "{{ ca.not_after }}"
+        backup: "{{ ca.backup | default(True) }}"
       register: ca_selfsigned_crt
       when:
         - ca.provider == 'selfsigned'
@@ -115,6 +118,7 @@
         ownca_privatekey_passphrase: "{{ ca.ownca_key_passphrase | default(omit) }}"
         ownca_path: "{{ pki_dir ~ '/roots/' ~ ca.signed_by ~ '/certs/' ~ ca.signed_by ~ '.crt' }}"
         ownca_not_after: "{{ ca.not_after }}"
+        backup: "{{ ca.backup | default(True) }}"
       register: ca_ownca_crt
       when:
         - ca.provider == 'ownca'
