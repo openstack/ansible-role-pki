@@ -59,6 +59,9 @@
         passphrase: "{{ ca.key_passphrase | default(omit) }}"
         cipher: "{{ ('key_passphrase' in ca and ca.key_passphrase) | ternary('auto', omit) }}"
         backup: "{{ ca.backup | default(True) }}"
+        mode: "{{ ca.key_mode | default('0600') }}"
+        owner: "{{ ca.key_owner | default('root') }}"
+        group: "{{ ca.key_group | default('root') }}"
       register: ca_privkey
 
     - name: Read the serial number for {{ ca.name }}
