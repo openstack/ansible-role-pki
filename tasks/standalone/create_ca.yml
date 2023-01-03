@@ -36,6 +36,17 @@
         - path: "{{ ca_dir ~ '/certs' }}"
           mode: "0755"
 
+      # NOTE(noonedeadpunk): Incorrect permissions lead to CA certs re-generation as
+      #                      openssl_privatekey gets changed when harmonizing ownership/permissions
+    - name: Ensure private key has proper ownership
+      file:
+        state: file
+        path: "{{ ca_dir ~ '/private/' ~ ca.name ~ '.key.pem' }}"
+        mode: "{{ ca.key_mode | default('0600') }}"
+        owner: "{{ ca.key_owner | default('root') }}"
+        group: "{{ ca.key_group | default('root') }}"
+      failed_when: false
+
     - name: Initialise the serial number for {{ ca.name }}
       copy:
         content: "999"
