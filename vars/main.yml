@@ -14,37 +14,17 @@
 # limitations under the License.
 
 # Gather CA definitions from hostvars
-_pki_ca_defs: |-
-  {%  set _cas = pki_authorities %}
-  {%  set _ca_search_hits = vars.keys() | select('match', '^' ~ pki_search_authorities_pattern ~ '.*') %}
-  {%  for _ca in _ca_search_hits | default([]) %}
-  {%    set _ = _cas.extend(lookup('vars', _ca)) %}
-  {%  endfor %}
-  {{ _cas | rejectattr('condition', 'false') }}
+_pki_ca_candidates: "{{ query('vars', *query('varnames', '^' ~ pki_search_authorities_pattern)) | flatten(levels=1) }}"
+_pki_ca_defs: "{{ pki_authorities | union(_pki_ca_candidates) | rejectattr('condition', 'false') }}"
 
 # Gather CA installation definitions from hostvars
-_pki_install_ca_defs: |-
-  {%  set _cas = pki_install_ca %}
-  {%  set _ca_search_hits = vars.keys() | select('match', '^' ~ pki_search_install_ca_pattern ~ '.*') %}
-  {%  for _ca in _ca_search_hits | default([]) %}
-  {%    set _ = _cas.extend(lookup('vars', _ca)) %}
-  {%  endfor %}
-  {{ _cas | rejectattr('condition', 'false') }}
+_pki_install_ca_candidates: "{{ query('vars', *query('varnames', '^' ~ pki_search_install_ca_pattern)) | flatten(levels=1) }}"
+_pki_install_ca_defs: "{{ pki_install_ca | union(_pki_install_ca_candidates) | rejectattr('condition', 'false') }}"
 
 # Gather certificate definitions from hostvars
-_pki_certificates_defs: |
-  {%  set _certs = pki_certificates %}
-  {%  set _cert_search_hits = vars.keys() | select('match', '^' ~ pki_search_certificates_pattern ~ '.*') %}
-  {%  for _cert in _cert_search_hits | default([]) %}
-  {%    set _ = _certs.extend(lookup('vars', _cert)) %}
-  {%  endfor %}
-  {{ _certs | rejectattr('condition', 'false') }}
+_pki_certificates_candidates: "{{ query('vars', *query('varnames', '^' ~ pki_search_certificates_pattern)) | flatten(levels=1) }}"
+_pki_certificates_defs: "{{ pki_certificates | union(_pki_certificates_candidates) | rejectattr('condition', 'false') }}"
 
 # Gather certificate installation definitions from hostvars
-_pki_install_certificates_defs: |
-  {%  set _certs = pki_install_certificates %}
-  {%  set _cert_search_hits = vars.keys() | select('match', '^' ~ pki_search_install_certificates_pattern ~ '.*') %}
-  {%  for _cert in _cert_search_hits | default([]) %}
-  {%    set _ = _certs.extend(lookup('vars', _cert)) %}
-  {%  endfor %}
-  {{ _certs | rejectattr('condition', 'false') }}
+_pki_install_certificates_candidates: "{{ query('vars', *query('varnames', '^' ~ pki_search_install_certificates_pattern)) | flatten(levels=1) }}"
+_pki_install_certificates_defs: "{{ pki_install_certificates | union(_pki_install_certificates_candidates) | rejectattr('condition', 'false') }}"
