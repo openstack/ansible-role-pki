@@ -28,6 +28,9 @@
     dest: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ item.item.filename | default(item.item.name ~ '.crt') }}"
   register: ca_copy
   loop: "{{ _ca_slurp.results | default([]) }}"
+  loop_control:
+    label:
+      dest: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ item.item.filename | default(item.item.name ~ '.crt') }}"
   when: item.skipped is not defined
   ignore_errors: "{{ ansible_check_mode }}"
 

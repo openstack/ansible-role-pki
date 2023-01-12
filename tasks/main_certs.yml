@@ -56,6 +56,10 @@
   loop: "{{ _cert_slurp.results }}"
   loop_control:
     loop_var: install
+    label:
+      path: "{{ install.item.dest | dirname }}"
+      state: directory
+      mode: '0755'
 
 - name: Install Server certificates to targets
   copy:
@@ -67,7 +71,11 @@
   loop: "{{ _cert_slurp.results }}"
   loop_control:
     loop_var: install
-  no_log: true
+    label:
+      dest: "{{ install.item.dest }}"
+      owner: "{{ install.item.owner | default(omit) }}"
+      group: "{{ install.item.group | default('omit') }}"
+      mode: "{{ install.item.mode | default('0644') }}"
   ignore_errors: "{{ ansible_check_mode }}"
   notify:
     - cert installed
