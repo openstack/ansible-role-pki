@@ -124,7 +124,7 @@
 
     - name: Symlink the certificate name to the most recently generated
       file:
-        src: "{{ ca_selfsigned_crt.filename | default(ca_ownca_crt.filename) }}"
+        src: "{{ (ca_selfsigned_crt.filename | default(ca_ownca_crt.filename)) | basename }}"
         dest: "{{ ca_cert_prefix ~ '.crt' }}"
         state: link
       when: ca_ownca_crt is changed or ca_selfsigned_crt is changed
