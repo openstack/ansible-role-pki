@@ -1,3 +1,4 @@
+---
 # Copyright 2021, BBC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,16 +14,16 @@
 # limitations under the License.
 
 # when the created CA certificates are changed
-- name: ca cert changed
+- name: "{{ pki_handler_ca_changed }}"
   meta: noop
   when: false
 
 # when the created server certificates are changed
-- name: cert changed
+- name: "{{ pki_handler_cert_changed }}"
   meta: noop
   when: false
 
 # when a certificate is installed onto a server
-- name: cert installed
+- name: "{{ pki_handler_cert_installed }}"
   meta: noop
   when: false

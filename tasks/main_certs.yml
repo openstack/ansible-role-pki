@@ -78,4 +78,4 @@
       mode: "{{ install.item.mode | default('0644') }}"
   ignore_errors: "{{ ansible_check_mode }}"
   notify:
-    - cert installed
+    - "{{ pki_handler_cert_installed }}"

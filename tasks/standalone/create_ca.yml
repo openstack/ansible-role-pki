@@ -109,7 +109,7 @@
         - ca.provider == 'selfsigned'
         - ca_csr is changed
       notify:
-        - ca cert changed
+        - "{{ pki_handler_ca_changed }}"
 
     - name: Sign the intermediate CA CSR for {{ ca.name }}
       vars:
@@ -127,7 +127,7 @@
         - ca.provider == 'ownca'
         - ca_csr is changed
       notify:
-        - ca cert changed
+        - "{{ pki_handler_ca_changed }}"
 
     - name: Symlink the certificate name to the most recently generated
       file:

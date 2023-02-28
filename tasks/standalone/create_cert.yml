@@ -65,7 +65,7 @@
         - cert.provider == 'ownca'
         - cert_csr is changed
       notify:
-        - cert changed
+        - "{{ pki_handler_cert_changed }}"
       ignore_errors: "{{ ansible_check_mode }}"
 
     - name: Get certificate info for {{ cert.name }}

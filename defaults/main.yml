@@ -150,3 +150,8 @@ pki_search_install_certificates_pattern: "pki_install_certificates_"
 
 # method used to create the certificates
 pki_method: standalone
+
+# Handlers naming
+pki_handler_ca_changed: "ca cert changed"
+pki_handler_cert_changed: "cert changed"
+pki_handler_cert_installed: "cert installed"
