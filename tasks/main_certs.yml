@@ -56,7 +56,9 @@
   loop: "{{ _cert_slurp.results }}"
   loop_control:
     loop_var: install
-    label:
+    label: "{{ loop_label | to_json }}"
+  vars:
+    loop_label:
       path: "{{ install.item.dest | dirname }}"
       state: directory
       mode: '0755'
@@ -71,7 +73,9 @@
   loop: "{{ _cert_slurp.results }}"
   loop_control:
     loop_var: install
-    label:
+    label: "{{ loop_label | to_json }}"
+  vars:
+    loop_label:
       dest: "{{ install.item.dest }}"
       owner: "{{ install.item.owner | default(omit) }}"
       group: "{{ install.item.group | default('omit') }}"
