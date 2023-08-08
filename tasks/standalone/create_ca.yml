@@ -24,17 +24,17 @@
       file:
         state: directory
         path: "{{ item.path }}"
-        owner: "{{ item.owner | default(omit) }}"
-        mode: "{{ item.mode | default(omit) }}"
+        owner: "{{ item.owner | default(pki_owner) | default(omit) }}"
+        group: "{{ item.group | default(pki_group) | default(omit) }}"
+        mode: "{{ item.mode | default('0755') }}"
       with_items:
         - path: "{{ ca_dir }}"
-          mode: "0755"
         - path: "{{ ca_dir ~ '/csr' }}"
-          mode: "0700"
+          mode: "{{ pki_key_dir_mode }}"
         - path: "{{ ca_dir ~ '/private' }}"
-          mode: "0700"
+          mode: "{{ pki_key_dir_mode }}"
         - path: "{{ ca_dir ~ '/certs' }}"
-          mode: "0755"
+          mode: "{{ pki_cert_dir_mode }}"
 
       # NOTE(noonedeadpunk): Incorrect permissions lead to CA certs re-generation as
       #                      openssl_privatekey gets changed when harmonizing ownership/permissions
@@ -42,9 +42,9 @@
       file:
         state: file
         path: "{{ ca_dir ~ '/private/' ~ ca.name ~ '.key.pem' }}"
-        mode: "{{ ca.key_mode | default('0600') }}"
-        owner: "{{ ca.key_owner | default('root') }}"
-        group: "{{ ca.key_group | default('root') }}"
+        mode: "{{ ca.key_mode | default(pki_key_mode) }}"
+        owner: "{{ ca.key_owner | default(pki_owner) | default(omit) }}"
+        group: "{{ ca.key_group | default(pki_group) | default(omit) }}"
       failed_when: false
 
     - name: Initialise the serial number for {{ ca.name }}
@@ -59,9 +59,9 @@
         passphrase: "{{ ca.key_passphrase | default(omit) }}"
         cipher: "{{ ('key_passphrase' in ca and ca.key_passphrase) | ternary('auto', omit) }}"
         backup: "{{ ca.backup | default(True) }}"
-        mode: "{{ ca.key_mode | default('0600') }}"
-        owner: "{{ ca.key_owner | default('root') }}"
-        group: "{{ ca.key_group | default('root') }}"
+        mode: "{{ ca.key_mode | default(pki_key_mode) }}"
+        owner: "{{ ca.key_owner | default(pki_owner) | default(omit) }}"
+        group: "{{ ca.key_group | default(pki_group) | default(omit) }}"
       register: ca_privkey
 
     - name: Read the serial number for {{ ca.name }}

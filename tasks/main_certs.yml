@@ -21,8 +21,9 @@
   file:
     state: directory
     path: "{{ item.path }}"
-    owner: "{{ item.owner | default(omit) }}"
-    mode: "{{ item.mode | default(omit) }}"
+    owner: "{{ item.owner | default(pki_owner) | default(omit) }}"
+    group: "{{ item.group | default(pki_group) | default(omit) }}"
+    mode: "{{ item.mode | default('0755') }}"
   with_items:
     - "{{ pki_cert_dirs }}"
   when: pki_create_certificates | default(true)

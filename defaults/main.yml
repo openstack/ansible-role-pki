@@ -155,3 +155,11 @@ pki_method: standalone
 pki_handler_ca_changed: "ca cert changed"
 pki_handler_cert_changed: "cert changed"
 pki_handler_cert_installed: "cert installed"
+
+# Default permissions used on pki_setup_host
+# pki_owner: "root"
+# pki_group: "root"
+pki_cert_mode: "0644"
+pki_cert_dir_mode: "0755"
+pki_key_mode: "0600"
+pki_key_dir_mode: "0700"
