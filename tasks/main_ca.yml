@@ -21,8 +21,9 @@
   file:
     state: directory
     path: "{{ item.path }}"
-    owner: "{{ item.owner | default(omit) }}"
-    mode: "{{ item.mode | default(omit) }}"
+    owner: "{{ item.owner | default(pki_owner) | default(omit) }}"
+    group: "{{ item.group | default(pki_group) | default(omit) }}"
+    mode: "{{ item.mode | default('0755') }}"
   with_items:
     - "{{ pki_ca_dirs }}"
   delegate_to: "{{ pki_setup_host }}"
