@@ -26,8 +26,8 @@
     mode: "{{ item.mode | default('0755') }}"
   with_items:
     - "{{ pki_ca_dirs }}"
+    - "{{ pki_cert_dirs }}"
   delegate_to: "{{ pki_setup_host }}"
-  when: pki_create_ca | bool
   check_mode: no
 
 - name: Create certificate authorities

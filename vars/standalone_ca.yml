@@ -18,6 +18,18 @@ pki_ca_dirs:
   - path: "{{ pki_dir }}"
   - path: "{{ pki_dir ~ '/roots' }}"
 
+# directories for server certificates on the CA host
+_pki_cert_dirs:
+  - path: "{{ pki_dir }}"
+  - path: "{{ pki_dir ~ '/certs' }}"
+    mode: "{{ pki_cert_dir_mode }}"
+  - path: "{{ pki_dir ~ '/certs/csr' }}"
+    mode: "{{ pki_key_dir_mode }}"
+  - path: "{{ pki_dir ~ '/certs/private' }}"
+    mode: "{{ pki_key_dir_mode }}"
+  - path: "{{ pki_dir ~ '/certs/certs' }}"
+    mode: "{{ pki_cert_dir_mode }}"
+
 pki_ca_install_command:
   apt: "update-ca-certificates"
   dnf: "update-ca-trust extract"

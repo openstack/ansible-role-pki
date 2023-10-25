@@ -13,24 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Include {{ pki_method }} certificate variables
-  include_vars:
-    file: "{{ pki_method ~ '_cert.yml' }}"
-
-- name: Create certificate directories
-  file:
-    state: directory
-    path: "{{ item.path }}"
-    owner: "{{ item.owner | default(pki_owner) | default(omit) }}"
-    group: "{{ item.group | default(pki_group) | default(omit) }}"
-    mode: "{{ item.mode | default('0755') }}"
-  with_items:
-    - "{{ pki_cert_dirs }}"
-  when: pki_create_certificates | default(true)
-  delegate_to: "{{ pki_setup_host }}"
-  run_once: yes
-  check_mode: no
-
 - name: Create Server certificates
   include_tasks: "{{ pki_method }}/create_cert.yml"
   loop: "{{ _pki_certificates_defs }}"
