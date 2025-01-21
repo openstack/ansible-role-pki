@@ -4,6 +4,7 @@ molecule_packages:
   debian:
     - ca-certificates
     - python3-cryptography
+    - python3-setuptools
     - gnutls-bin
     - iproute2
   redhat:
