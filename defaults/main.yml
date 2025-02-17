@@ -70,7 +70,7 @@ pki_install_ca: []
 pki_search_install_ca_pattern: "pki_install_ca_"
 
 # set this to the name of a CA to regenerate, or to 'true' to regenerate all
-pki_regen_ca: ''
+pki_regen_ca: ""
 
 # locations of system trust stores to install CA certs to
 pki_trust_store_location:
@@ -104,7 +104,7 @@ pki_search_certificates_pattern: "pki_certificates_"
 #     signed_by: "SnakeRootIntermediate"
 
 # set this to the name of the certificate to regenerate, or to 'true' to regenerate all
-pki_regen_cert: ''
+pki_regen_cert: ""
 
 # host where the generated PKI files are kept
 pki_setup_host: localhost

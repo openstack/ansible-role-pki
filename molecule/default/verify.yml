@@ -6,7 +6,6 @@
       apt: /usr/local/share/ca-certificates/
       dnf: /etc/pki/ca-trust/source/anchors/
   tasks:
-
     # Check that certificate authorities are installed (or absent) at the correct path
     - stat:
         path: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ functional_ca_name_1 }}.crt"

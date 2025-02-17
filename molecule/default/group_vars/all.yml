@@ -20,35 +20,35 @@ functional_ca_name_1: "ExampleCorpRoot"
 # Example self-signed certificate authority
 # Using the default variable
 pki_authorities:
- - name: "{{ functional_ca_name_1 }}"
-   provider: selfsigned
-   basic_constraints: "CA:TRUE"
-   cn: "Example Corp Root CA"
-   email_address: "pki@example.com"
-   country_name: "GB"
-   state_or_province_name: "England"
-   organization_name: "Example Corporation"
-   organizational_unit_name: "IT Security"
-   key_usage:
-     - digitalSignature
-     - cRLSign
-     - keyCertSign
-   not_after: "+3650d"
- - name: "ExampleCorpIntermediate"
-   provider: ownca
-   basic_constraints: "CA:TRUE,pathlen:0"
-   cn: "Example Corp Openstack Infrastructure Intermediate CA"
-   email_address: "pki@example.com"
-   country_name: "GB"
-   state_or_province_name: "England"
-   organization_name: "Example Corporation"
-   organizational_unit_name: "IT Security"
-   key_usage:
-     - digitalSignature
-     - cRLSign
-     - keyCertSign
-   not_after: "+3650d"
-   signed_by: "ExampleCorpRoot"
+  - name: "{{ functional_ca_name_1 }}"
+    provider: selfsigned
+    basic_constraints: "CA:TRUE"
+    cn: "Example Corp Root CA"
+    email_address: "pki@example.com"
+    country_name: "GB"
+    state_or_province_name: "England"
+    organization_name: "Example Corporation"
+    organizational_unit_name: "IT Security"
+    key_usage:
+      - digitalSignature
+      - cRLSign
+      - keyCertSign
+    not_after: "+3650d"
+  - name: "ExampleCorpIntermediate"
+    provider: ownca
+    basic_constraints: "CA:TRUE,pathlen:0"
+    cn: "Example Corp Openstack Infrastructure Intermediate CA"
+    email_address: "pki@example.com"
+    country_name: "GB"
+    state_or_province_name: "England"
+    organization_name: "Example Corporation"
+    organizational_unit_name: "IT Security"
+    key_usage:
+      - digitalSignature
+      - cRLSign
+      - keyCertSign
+    not_after: "+3650d"
+    signed_by: "ExampleCorpRoot"
 
 # Custom CA generation search pattern
 pki_search_authorities_pattern: "foo_authorities_"

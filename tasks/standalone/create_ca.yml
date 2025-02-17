@@ -19,7 +19,6 @@
     ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
   delegate_to: "{{ pki_setup_host }}"
   block:
-
     - name: Create directories for certificate authority {{ ca.name }}
       file:
         state: directory
@@ -36,8 +35,8 @@
         - path: "{{ ca_dir ~ '/certs' }}"
           mode: "{{ pki_cert_dir_mode }}"
 
-      # NOTE(noonedeadpunk): Incorrect permissions lead to CA certs re-generation as
-      #                      openssl_privatekey gets changed when harmonizing ownership/permissions
+    # NOTE(noonedeadpunk): Incorrect permissions lead to CA certs re-generation as
+    #                      openssl_privatekey gets changed when harmonizing ownership/permissions
     - name: Ensure private key has proper ownership
       file:
         state: file
@@ -50,8 +49,8 @@
     - name: Initialise the serial number for {{ ca.name }}
       copy:
         content: "999"
-        dest : "{{ ca_dir ~ '/serial' }}"
-        force: no
+        dest: "{{ ca_dir ~ '/serial' }}"
+        force: false
 
     - name: Generate CA private key for {{ ca.name }}
       community.crypto.openssl_privatekey:
@@ -75,7 +74,7 @@
         privatekey_path: "{{ ca_privkey.filename }}"
         privatekey_passphrase: "{{ ca.key_passphrase | default(omit) }}"
         common_name: "{{ ca.cn }}"
-        basic_constraints_critical: yes
+        basic_constraints_critical: true
         basic_constraints: "{{ ca.basic_constraints }}"
         key_usage: "{{ ca.key_usage }}"
         country_name: "{{ ca.country_name | default(omit) }}"
@@ -99,7 +98,7 @@
       community.crypto.x509_certificate:
         path: "{{ ca_cert_prefix ~ '-' ~ next_serial_no ~ '.crt' }}"
         csr_path: "{{ ca_csr.filename }}"
-        provider: 'selfsigned'
+        provider: "selfsigned"
         privatekey_path: "{{ ca_privkey.filename }}"
         privatekey_passphrase: "{{ ca.key_passphrase | default(omit) }}"
         selfsigned_not_after: "{{ ca.not_after }}"
@@ -116,7 +115,7 @@
       community.crypto.x509_certificate:
         path: "{{ ca_cert_prefix ~ '-' ~ next_serial_no ~ '.crt' }}"
         csr_path: "{{ ca_csr.filename }}"
-        provider: 'ownca'
+        provider: "ownca"
         ownca_privatekey_path: "{{ pki_dir ~ '/roots/' ~ ca.signed_by ~ '/private/' ~ ca.signed_by ~ '.key.pem' }}"
         ownca_privatekey_passphrase: "{{ ca.ownca_key_passphrase | default(omit) }}"
         ownca_path: "{{ pki_dir ~ '/roots/' ~ ca.signed_by ~ '/certs/' ~ ca.signed_by ~ '.crt' }}"

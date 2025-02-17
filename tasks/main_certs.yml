@@ -19,7 +19,7 @@
   loop_control:
     loop_var: cert
   vars:
-     cert_dir: "{{ pki_dir }}/certs"
+    cert_dir: "{{ pki_dir }}/certs"
   when:
     - pki_create_certificates | default(true)
 
@@ -44,7 +44,7 @@
     loop_label:
       path: "{{ install }}"
       state: directory
-      mode: '0755'
+      mode: "0755"
 
 - name: Install Server certificates to targets
   copy:
