@@ -74,12 +74,12 @@
       when: cert_crt is changed
 
     - name: Save certificate info for {{ cert.name }}
-      copy:
+      ansible.builtin.copy:
         content: "{{ cert_info | to_nice_yaml }}"
         dest: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '.info' }}"
       when: cert_crt is changed
 
     - name: Create certificate chain for {{ cert.name }}
-      shell:
+      ansible.builtin.shell:
         cmd: "cat {{ _cert_file }} {{ _ca_file }} > {{ _cert_chain_file }}"
         creates: "{{ (cert_crt is not changed) | ternary(_cert_chain_file, omit) }}"

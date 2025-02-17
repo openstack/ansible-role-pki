@@ -14,7 +14,7 @@
 # limitations under the License.
 
 - name: Create Server certificates
-  include_tasks: "{{ pki_method }}/create_cert.yml"
+  ansible.builtin.include_tasks: "{{ pki_method }}/create_cert.yml"
   loop: "{{ _pki_certificates_defs }}"
   loop_control:
     loop_var: cert
@@ -25,14 +25,14 @@
 
 - name: Slurp up server certificates from pki setup host ({{ pki_setup_host }})
   delegate_to: "{{ pki_setup_host }}"
-  slurp:
+  ansible.builtin.slurp:
     src: "{{ item.src }}"
   register: _cert_slurp
   loop: "{{ _pki_install_certificates_defs }}"
   ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Create certificate destination directories
-  file:
+  ansible.builtin.file:
     path: "{{ install }}"
     state: directory
     mode: "0755"
@@ -47,7 +47,7 @@
       mode: "0755"
 
 - name: Install Server certificates to targets
-  copy:
+  ansible.builtin.copy:
     content: "{{ install.content | b64decode }}"
     dest: "{{ install.item.dest }}"
     owner: "{{ install.item.owner | default(omit) }}"

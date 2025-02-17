@@ -13,6 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- include_tasks: main_ca.yml
-- include_tasks: main_ca_install.yml
-- include_tasks: main_certs.yml
+- name: Including main_ca tasks
+  ansible.builtin.include_tasks: main_ca.yml
+
+- name: Including main_ca_install tasks
+  ansible.builtin.include_tasks: main_ca_install.yml
+
+- name: Including main_certs tasks
+  ansible.builtin.include_tasks: main_certs.yml

@@ -15,15 +15,15 @@
 
 # when the created CA certificates are changed
 - name: "{{ pki_handler_ca_changed }}"
-  meta: noop
+  ansible.builtin.meta: noop
   when: false
 
 # when the created server certificates are changed
 - name: "{{ pki_handler_cert_changed }}"
-  meta: noop
+  ansible.builtin.meta: noop
   when: false
 
 # when a certificate is installed onto a server
 - name: "{{ pki_handler_cert_installed }}"
-  meta: noop
+  ansible.builtin.meta: noop
   when: false

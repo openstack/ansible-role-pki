@@ -14,9 +14,9 @@
 # limitations under the License.
 
 - name: Include {{ pki_method }} CA variables
-  include_vars:
+  ansible.builtin.include_vars:
     file: "{{ pki_method ~ '_ca.yml' }}"
 
 - name: Install certificate authorities
-  include_tasks: "{{ pki_method }}/install_ca.yml"
+  ansible.builtin.include_tasks: "{{ pki_method }}/install_ca.yml"
   when: _pki_install_ca_defs | length > 0

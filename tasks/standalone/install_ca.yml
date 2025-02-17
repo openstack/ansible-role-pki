@@ -15,7 +15,7 @@
 
 - name: Slurp up CA certificates from pki setup host ({{ pki_setup_host }})
   delegate_to: "{{ pki_setup_host }}"
-  slurp:
+  ansible.builtin.slurp:
     src: "{{ item.src | default(pki_dir ~ '/roots/' ~ item.name ~ '/certs/' ~ item.name ~ '.crt') }}"
   register: _ca_slurp
   run_once: true
@@ -23,7 +23,7 @@
   ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Copy CA certificates to target host
-  copy:
+  ansible.builtin.copy:
     content: "{{ item.content | b64decode }}"
     dest: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ item.item.filename | default(item.item.name ~ '.crt') }}"
   register: ca_copy
@@ -37,6 +37,6 @@
   ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Update CA store
-  command: "{{ pki_ca_install_command[ansible_facts['pkg_mgr']] }}"
+  ansible.builtin.command: "{{ pki_ca_install_command[ansible_facts['pkg_mgr']] }}"
   when:
     - ca_copy is changed
