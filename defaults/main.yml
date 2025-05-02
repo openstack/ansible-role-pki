@@ -37,7 +37,7 @@ pki_search_authorities_pattern: "pki_authorities_"
 #       - digitalSignature
 #       - cRLSign
 #       - keyCertSign
-#     not_after: "+3650d"
+#     ttl: "3650d"
 
 #pki_authorities_intermediates:
 #   - name: "SnakeRootIntermediate"
@@ -52,7 +52,7 @@ pki_search_authorities_pattern: "pki_authorities_"
 #       - digitalSignature
 #       - cRLSign
 #       - keyCertSign
-#     not_after: "+365d"
+#     ttl: "365d"
 #     signed_by: "SnakeRoot"
 
 # example variable of CA to install

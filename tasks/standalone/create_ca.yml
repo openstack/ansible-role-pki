@@ -29,10 +29,15 @@
 
 - name: Create certificate {{ ca.name }}
   vars:
-    next_serial_no: "{{ serial_no['content'] | b64decode | int + 1  }}"
+    next_serial_no: "{{ serial_no['content'] | b64decode | int + 1 }}"
     ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
     ca_dir: "{{ pki_dir }}/roots/{{ ca.name }}"
     ca_cert_prefix: "{{ pki_dir }}/roots/{{ ca.name }}/certs/{{ ca.name }}"
+    # NOTE(damiandabrowski): not_after support is kept only for backward compatbility and should be replaced after 2026.1 with:
+    #                        ownca_not_after: "+{{ ca.ttl }}"
+    ca_expires: "{{ ca.not_after | default(ca.ttl) | trim }}"
+    # NOTE(damiandabrowski): ensures that '+' is added at the beginning
+    ca_not_after: "{{ ca_expires.startswith('+') | ternary(ca_expires, '+' ~ ca_expires) }}"
   delegate_to: "{{ pki_setup_host }}"
   block:
     - name: Create directories for certificate authority {{ ca.name }}
@@ -86,7 +91,7 @@
 
     - name: Create the CA CSR for {{ ca.name }}
       community.crypto.openssl_csr:
-        path: "{{ ca_dir }}/csr/ca_csr-{{ next_serial_no  }}.csr"
+        path: "{{ ca_dir }}/csr/ca_csr-{{ next_serial_no }}.csr"
         privatekey_path: "{{ ca_privkey.filename }}"
         privatekey_passphrase: "{{ ca.key_passphrase | default(omit) }}"
         common_name: "{{ ca.cn }}"
@@ -117,7 +122,7 @@
         provider: "selfsigned"
         privatekey_path: "{{ ca_privkey.filename }}"
         privatekey_passphrase: "{{ ca.key_passphrase | default(omit) }}"
-        selfsigned_not_after: "{{ ca.not_after }}"
+        selfsigned_not_after: "{{ ca_not_after }}"
         backup: "{{ ca.backup | default(True) }}"
       register: ca_selfsigned_crt
       when:
@@ -134,7 +139,7 @@
         ownca_privatekey_path: "{{ pki_dir ~ '/roots/' ~ ca.signed_by ~ '/private/' ~ ca.signed_by ~ '.key.pem' }}"
         ownca_privatekey_passphrase: "{{ ca.ownca_key_passphrase | default(omit) }}"
         ownca_path: "{{ pki_dir ~ '/roots/' ~ ca.signed_by ~ '/certs/' ~ ca.signed_by ~ '.crt' }}"
-        ownca_not_after: "{{ ca.not_after }}"
+        ownca_not_after: "{{ ca_not_after }}"
         backup: "{{ ca.backup | default(True) }}"
       register: ca_ownca_crt
       when:
