@@ -1,0 +1,30 @@
+---
+# Copyright 2025, Cleura AB.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Authenticate to vault
+  vars:
+    ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
+  community.hashi_vault.vault_login:
+    url: "{{ pki_hashi_vault_host }}"
+    auth_method: "{{ pki_hashi_vault_auth_method }}"
+    username: "{{ pki_hashi_vault_login | default(omit) }}"
+    password: "{{ pki_hashi_vault_password | default(omit) }}"
+    token: "{{ pki_hashi_vault_token | default(omit) }}"
+    role_id: "{{ pki_hashi_vault_role_id | default(omit) }}"
+    secret_id: "{{ pki_hashi_vault_secret_id | default(omit) }}"
+    jwt: "{{ pki_hashi_vault_jwt | default(omit) }}"
+    mount_point: "{{ pki_hashi_vault_auth_mount_point | default(omit) }}"
+  register: vault_login_data
+  changed_when: false
+  delegate_to: "{{ pki_setup_host }}"

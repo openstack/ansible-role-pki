@@ -1,0 +1,93 @@
+---
+# Copyright 2025, Cleura AB.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Check if certificate files exist ({{ cert.name }})
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop: "{{ pki_matching_install_certificates | map(attribute='dest') }}"
+  register: stat_results
+
+- name: Determine if certificate needs to be generated ({{ cert.name }})
+  ansible.builtin.set_fact:
+    generate_certificate: true
+  when: stat_results.results | selectattr('stat.exists', 'equalto', false) | list | length > 0
+
+- name: Create certificate {{ cert.name }}
+  when: (generate_certificate is defined) or (pki_regen_cert == cert.name) or ((pki_regen_cert | lower) == 'true')
+  block:
+    - name: Create certificate destination directories ({{ cert.name }})
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop: "{{ pki_matching_install_certificates | map(attribute='dest') | map('dirname') | unique }}"
+
+    - name: Authenticate to {{ pki_hashi_vault_host }}
+      ansible.builtin.include_tasks: "{{ cert.backend | default(pki_backend) }}/authenticate.yml"
+      when: vault_login_data is not defined
+
+    - name: Generate certificate {{ cert.name }}
+      vars:
+        ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
+      delegate_to: "{{ pki_setup_host }}"
+      community.hashi_vault.vault_pki_generate_certificate:
+        url: "{{ pki_hashi_vault_host }}"
+        token: "{{ vault_login_data.login.auth.client_token }}"
+        role_name: "{{ cert.role | default(pki_hashi_vault_role) }}"
+        common_name: "{{ cert.cn }}"
+        alt_names: "{{ cert.san.dns | default(cert.alt_names | default(omit)) }}"
+        ttl: "{{ cert.ttl | default(omit) }}"
+        exclude_cn_from_sans: "{{ cert.exclude_cn_from_sans | default(False) }}"
+        ip_sans: "{{ cert.san.ip | default(omit) }}"
+        uri_sans: "{{ cert.san.uri | default(omit) }}"
+        other_sans: "{{ cert.san.other | default(omit) }}"
+        format: "{{ cert.format | default(omit) }}"
+        private_key_format: "{{ cert.key_format | default(omit) }}"
+        engine_mount_point: "{{ cert.engine_mount_point | default(pki_hashi_vault_engine_mount_point) }}"
+      register: cert_data
+
+    - name: Write certificate data ({{ cert.name }})
+      vars:
+        # match user-provided cert types with the hashi_vault internal types
+        _format:
+          "certificate": ['certificate']
+          "certificate_chain": ['certificate', 'ca_chain']
+          "ca_bundle": ['ca_chain']
+          "private_key": ['private_key']
+        _owner: "{{ item.owner | default(pki_install_owner) }}"
+        _group: "{{ item.group | default(pki_install_group) }}"
+        _mode: "{{ item.mode | d(pki_file_mode[item.type | d('certificate')]) }}"
+      ansible.builtin.copy:
+        # NOTE: Some cert types are presented in a list. It's required to make sure they are flattened and newline is
+        #       added between them.
+        # NOTE: Blank string is added as last element of the list to make sure that newline is added and the end of
+        #       file. It's required when when other roles(like haproxy or zookeper) combine cert, ca_chain and private
+        #       key into a single file.
+        content: "{{ _format[item.type] | map('extract', cert_data.data.data) | flatten | join('\n') ~ '\n' }}"
+        dest: "{{ item.dest }}"
+        owner: "{{ _owner }}"
+        group: "{{ _group }}"
+        mode : "{{ _mode }}"
+      loop: "{{ pki_matching_install_certificates }}"
+      loop_control:
+        label: >-
+          name: {{ item.name }},
+          dest: {{ item.dest }},
+          type: {{ item.type }},
+          mode: {{ _mode }},
+          owner: {{ _owner }},
+          group: {{ _group }}
+      ignore_errors: "{{ ansible_check_mode }}"
+      notify:
+        - "{{ pki_handler_cert_installed }}"

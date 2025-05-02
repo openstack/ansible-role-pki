@@ -1,0 +1,40 @@
+---
+# Copyright 2025, Cleura AB.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Authenticate to {{ pki_hashi_vault_host }}
+  ansible.builtin.include_tasks: "{{ ca_backend | default(pki_backend) }}/authenticate.yml"
+  when: vault_login_data is not defined
+
+- name: Fetch CA cert ({{ ca.name }})
+  vars:
+    ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
+  delegate_to: "{{ pki_setup_host }}"
+  community.hashi_vault.vault_read:
+    url: "{{ pki_hashi_vault_host }}"
+    token: "{{ vault_login_data.login.auth.client_token }}"
+    path: "{{ (_pki_ca_defs | selectattr('name', 'equalto', ca.name) | map(attribute='vault_path') | first) }}/cert/ca"
+  register: ca_cert
+
+- name: Copy CA certificate to target host ({{ ca.name }})
+  ansible.builtin.copy:
+    content: "{{ ca_cert.data.data.certificate }}"
+    dest: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ ca.filename | default(ca.name ~ '.crt') }}"
+    mode: '0644'
+  register: ca_copy
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Update CA store
+  ansible.builtin.command: "{{ pki_ca_install_command[ansible_facts['pkg_mgr']] }}"
+  when:
+    - ca_copy is changed

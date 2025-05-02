@@ -1,0 +1,218 @@
+---
+# Copyright 2025, Cleura AB.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+pki_hashi_vault_host: "http://pki-hashi-vault-openbao:8200"
+pki_hashi_vault_role: default
+pki_hashi_vault_login: osa
+pki_hashi_vault_password: osa-secret-pass
+
+molecule_packages:
+  debian:
+    - gnutls-bin
+    - python3-pip
+    - python3-setuptools
+    - python3-cryptography
+    - python3-hvac
+  redhat:
+    - gnutls-utils
+    - python3-pip
+    - python3-setuptools
+    - python3-cryptography
+    - python3-hvac
+
+pki_setup_host: "{{ inventory_hostname }}"
+pki_backend: hashi_vault
+
+functional_ca_name_1: "ExampleCorpRoot"
+
+pki_authorities:
+  - name: "{{ functional_ca_name_1 }}"
+    cn: "Example Corp Root CA"
+    email_address: "pki@example.com"
+    country_name: "GB"
+    state_or_province_name: "England"
+    organization_name: "Example Corporation"
+    organizational_unit_name: "IT Security"
+    ttl: "3650d"
+    vault_path: pki_root
+  - name: "ExampleCorpIntermediate"
+    cn: "Example Corp Openstack Infrastructure Intermediate CA"
+    email_address: "pki@example.com"
+    country_name: "GB"
+    state_or_province_name: "England"
+    organization_name: "Example Corporation"
+    organizational_unit_name: "IT Security"
+    ttl: "3650d"
+    vault_path: pki_int
+    signed_by: pki_root
+
+# Custom CA generation search pattern
+pki_search_authorities_pattern: "foo_authorities_"
+
+# Certificate authority to cerate from a custom variable
+functional_ca_name_2: "FooAuthorityNotInstalled"
+functional_ca_name_3: "FooAuthorityInstalled"
+
+foo_authorities_variable:
+  - name: "{{ functional_ca_name_2 }}"
+    country: "GB"
+    state_or_province_name: "England"
+    organization_name: "Example Corporation"
+    organizational_unit_name: "IT Security"
+    cn: "FooAutorityNotInstalled"
+    ttl: "3650d"
+    condition: false
+    vault_path: pki_root
+  - name: "{{ functional_ca_name_3 }}"
+    backend: standalone
+    country: "GB"
+    state_or_province_name: "England"
+    organization_name: "Example Corporation"
+    organizational_unit_name: "IT Security"
+    cn: "FooAutorityInstalled"
+    provider: selfsigned
+    basic_constraints: "CA:TRUE"
+    key_usage:
+      - digitalSignature
+      - keyCertSign
+    ttl: "3650d"
+    condition: true
+
+# install the root CA certificate
+pki_install_ca:
+  - name: "ExampleCorpRoot"
+
+# Custom CA install search pattern
+pki_search_install_ca_pattern: "foo_install_ca_"
+
+# CA to install from a custom variable
+foo_install_ca_variable:
+  - name: "FooAuthorityInstalled"
+
+# Certificates to create from the default variable
+pki_certificates:
+  - name: "{{ ansible_facts['hostname'] }}_1"
+    cn: "{{ ansible_facts['hostname'] }}"
+    san:
+      dns:
+        - "{{ ansible_facts['hostname']}}"
+
+# Custom certificate generation search pattern
+pki_search_certificates_pattern: "foo_certificates_"
+
+# Certificates to create from a custom variable, with conditionals
+foo_certificates_variable:
+  - name: "{{ ansible_facts['hostname'] }}_2"
+    cn: "{{ ansible_facts['hostname'] }}"
+    condition: true
+    san:
+      dns:
+        - "{{ ansible_facts['hostname'] }}"
+  - name: "{{ ansible_facts['hostname'] }}_3"
+    cn: "{{ ansible_facts['hostname'] }}"
+    condition: false
+    san:
+      dns:
+        - "{{ ansible_facts['hostname'] }}"
+
+# Certificates signed by the standalone CA
+foo_certificates_standalone:
+  - name: "{{ ansible_facts['hostname'] }}_4"
+    cn: "{{ ansible_facts['hostname'] }}"
+    backend: standalone
+    san:
+      dns:
+        - "{{ ansible_facts['hostname'] }}"
+    provider: ownca
+    signed_by: "{{ functional_ca_name_3 }}"
+
+# Certificates to install from the default variable
+functional_install_cert_1_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_1.crt' }}"
+functional_install_chain_1_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_1-chain.crt' }}"
+functional_install_key_1_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_1.key.pem' }}"
+
+pki_install_certificates:
+  - dest: "{{ functional_install_cert_1_dest }}"
+    name: "{{ ansible_facts['hostname'] ~ '_1' }}"
+    type: certificate
+    owner: 65534
+    group: 65534
+
+  - dest: "{{ functional_install_chain_1_dest }}"
+    name: "{{ ansible_facts['hostname'] ~ '_1' }}"
+    type: certificate_chain
+    owner: 65534
+    group: 65534
+    mode: "0755"
+
+  - dest: "{{ functional_install_key_1_dest }}"
+    name: "{{ ansible_facts['hostname'] ~ '_1' }}"
+    type: private_key
+    owner: 65534
+    group: 65534
+
+# Custom certificate installation search pattern
+pki_search_install_certificates_pattern: "foo_install_certificates_"
+
+# Certificates to isntall from a custom variable, with conditionals
+functional_install_cert_2_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_2.crt' }}"
+functional_install_chain_2_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_2-chain.crt' }}"
+functional_install_key_2_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_2.key.pem' }}"
+
+functional_install_cert_3_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_3.crt' }}"
+functional_install_chain_3_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_3-chain.crt' }}"
+functional_install_key_3_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_3.key.pem' }}"
+
+functional_install_cert_4_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_4.crt' }}"
+functional_install_chain_4_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_4-chain.crt' }}"
+functional_install_key_4_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_4.key.pem' }}"
+
+foo_install_certificates_variable:
+  - dest: "{{ functional_install_cert_2_dest }}"
+    condition: true
+    name: "{{ ansible_facts['hostname'] ~ '_2' }}"
+    type: certificate
+  - dest: "{{ functional_install_chain_2_dest }}"
+    condition: true
+    name: "{{ ansible_facts['hostname'] ~ '_2' }}"
+    type: certificate_chain
+  - dest: "{{ functional_install_key_2_dest }}"
+    condition: true
+    name: "{{ ansible_facts['hostname'] ~ '_2' }}"
+    type: private_key
+  - dest: "{{ functional_install_cert_3_dest }}"
+    condition: false
+    name: "{{ ansible_facts['hostname'] ~ '_3' }}"
+    type: certificate
+  - dest: "{{ functional_install_key_3_dest }}"
+    condition: false
+    name: "{{ ansible_facts['hostname'] ~ '_3' }}"
+    type: private_key
+
+# Certificates signed by the standalone CA
+foo_install_certificates_standalone:
+  - src: "{{ pki_dir ~ '/certs/certs/' ~ ansible_facts['hostname'] ~ '_4.crt' }}"
+    dest: "{{ functional_install_cert_4_dest }}"
+    type: "certificate"
+    backend: standalone
+  - src: "{{ pki_dir ~ '/certs/certs/' ~ ansible_facts['hostname'] ~ '_4-chain.crt' }}"
+    dest: "{{ functional_install_chain_4_dest }}"
+    type: "certificate_chain"
+    condition: true
+    backend: standalone
+  - src: "{{ pki_dir ~ '/certs/private/' ~ ansible_facts['hostname'] ~ '_4.key.pem' }}"
+    dest: "{{ functional_install_key_4_dest }}"
+    type: "private_key"
+    condition: true
+    backend: standalone

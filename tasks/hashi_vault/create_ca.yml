@@ -1,0 +1,150 @@
+---
+# Copyright 2025, Cleura AB.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Ensure python3-hvac is installed
+  ansible.builtin.package:
+    name: python3-hvac
+    state: present
+
+- name: Authenticate to {{ pki_hashi_vault_host }}
+  ansible.builtin.include_tasks: "{{ ca.backend | default(pki_backend) }}/authenticate.yml"
+  when: vault_login_data is not defined
+
+- name: Create CA root {{ ca.name }}
+  vars:
+    ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
+  delegate_to: "{{ pki_setup_host }}"
+  when: ca.signed_by is not defined
+  block:
+    - name: Check if CA root already exists ({{ ca.name }})
+      community.hashi_vault.vault_read:
+        url: "{{ pki_hashi_vault_host }}"
+        token: "{{ vault_login_data.login.auth.client_token }}"
+        path: "{{ ca.vault_path }}/cert/ca"
+      register: ca_cert
+      failed_when: >-
+        ca_cert.failed
+        and "no default issuer currently configured" not in ca_cert.module_stderr
+
+    - name: Generate Root CA ({{ ca.name }})
+      when: ca_cert.data.data.certificate is not defined or pki_regen_ca == ca.name or (pki_regen_ca | lower) == 'true'
+      community.hashi_vault.vault_write:
+        url: "{{ pki_hashi_vault_host }}"
+        token: "{{ vault_login_data.login.auth.client_token }}"
+        path: "{{ ca.vault_path }}/root/generate/internal"
+        data:
+          common_name: "{{ ca.cn }}"
+          issuer_name: "{{ ca.issuer_name | default(ca.name) }}"
+          country: "{{ ca.country_name | default(omit) }}"
+          province: "{{ ca.state_or_province_name | default(omit) }}"
+          locality: "{{ ca.locality_name | default(omit) }}"
+          organization: "{{ ca.organizataion_name | default(omit) }}"
+          ou: "{{ ca.organization_unit_name | default(omit) }}"
+          alt_names: "{{ ca.san.dns | default(ca.alt_names | default(omit)) }}"
+          ttl: "{{ ca.ttl | default(omit) }}"
+          not_after: "{{ ca.not_after | default(omit) }}"
+          key_name: "{{ ca.key_name | default(omit) }}"
+          key_ref: "{{ ca.key_ref | default(omit) }}"
+          key_type: "{{ ca.key_type | default(omit) }}"
+          key_bits: "{{ ca.key_bits | default(omit) }}"
+          max_path_length: "{{ ca.max_path_length | default(omit) }}"
+          key_usage: "{{ ca.key_usage | default(omit) }}"
+          serial_number: "{{ ca.serial_number | default(omit) }}"
+          exclude_cn_from_sans: "{{ ca.exclude_cn_from_sans | default(omit) }}"
+          permitted_dns_domains: "{{ ca.permitted_dns_domains | default(omit) }}"
+          ip_sans: "{{ ca.san.ip | default(omit) }}"
+          uri_sans: "{{ ca.san.uri | default(omit) }}"
+          other_sans: "{{ ca.san.other | default(omit) }}"
+          format: "{{ ca.format | default(omit) }}"
+          private_key_format: "{{ ca.key_format | default(omit) }}"
+
+    - name: Set default issuer ({{ ca.name }})
+      community.hashi_vault.vault_write:
+        url: "{{ pki_hashi_vault_host }}"
+        token: "{{ vault_login_data.login.auth.client_token }}"
+        path: "{{ ca.vault_path }}/config/issuers"
+        data:
+          default: "{{ ca.name }}"
+      # NOTE(damiandabrowski): community.hashi_vault.vault_write always returns changed status which causes molecule idempotence test to fail
+      changed_when: false
+
+- name: Create intermediate CA {{ ca.name }}
+  vars:
+    ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
+  delegate_to: "{{ pki_setup_host }}"
+  when: ca.signed_by is defined
+  block:
+    - name: Check if intermediate already exists ({{ ca.name }})
+      community.hashi_vault.vault_read:
+        url: "{{ pki_hashi_vault_host }}"
+        token: "{{ vault_login_data.login.auth.client_token }}"
+        path: "{{ ca.vault_path }}/cert/ca"
+      register: intermediate_ca_cert
+      failed_when: >-
+        intermediate_ca_cert.failed
+        and "no default issuer currently configured" not in intermediate_ca_cert.module_stderr
+
+    - name: Generate Intermediate CA CSR ({{ ca.name }})
+      when: intermediate_ca_cert.data.data.certificate is not defined
+      community.hashi_vault.vault_write:
+        url: "{{ pki_hashi_vault_host }}"
+        token: "{{ vault_login_data.login.auth.client_token }}"
+        path: "{{ ca.vault_path }}/intermediate/generate/internal"
+        data:
+          common_name: "{{ ca.cn }}"
+          country: "{{ ca.country_name | default(omit) }}"
+          province: "{{ ca.state_or_province_name | default(omit) }}"
+          locality: "{{ ca.locality_name | default(omit) }}"
+          organization: "{{ ca.organizataion_name | default(omit) }}"
+          ou: "{{ ca.organization_unit_name | default(omit) }}"
+          alt_names: "{{ ca.san.dns | default(ca.alt_names | default(omit)) }}"
+          key_name: "{{ ca.vault_key_name | default(omit) }}"
+          key_ref: "{{ ca.vault_key_ref | default(omit) }}"
+          key_type: "{{ ca.vault_key_type | default(omit) }}"
+          key_bits: "{{ ca.vault_key_bits | default(omit) }}"
+          max_path_length: "{{ ca.vault_max_path_length | default(omit) }}"
+          key_usage: "{{ ca.key_usage | default(omit) }}"
+          serial_number: "{{ ca.vault_serial_number | default(omit) }}"
+          exclude_cn_from_sans: "{{ ca.exclude_cn_from_sans | default(omit) }}"
+          permitted_dns_domains: "{{ ca.permitted_dns_domains | default(omit) }}"
+          ip_sans: "{{ ca.san.ip | default(omit) }}"
+          uri_sans: "{{ ca.san.uri | default(omit) }}"
+          other_sans: "{{ ca.san.other | default(omit) }}"
+          format: "{{ ca.format | default(omit) }}"
+          private_key_format: "{{ ca.key_format | default(omit) }}"
+          add_basic_constraints: "{{ ca.add_basic_constraints | default(omit) }}"
+      register: intermediate_csr
+
+    - name: Sign the Intermediate CSR with Root CA ({{ ca.name }})
+      when: intermediate_ca_cert.data.data.certificate is not defined
+      community.hashi_vault.vault_write:
+        url: "{{ pki_hashi_vault_host }}"
+        token: "{{ vault_login_data.login.auth.client_token }}"
+        path: "{{ ca.signed_by }}/root/sign-intermediate"
+        data:
+          csr: "{{ intermediate_csr.data.data.csr }}"
+          format: "pem_bundle"
+          ttl: "{{ ca.ttl | default(omit) }}"
+      register: signed_intermediate_cert
+      ignore_errors: "{{ ansible_check_mode }}"
+
+    - name: Store the Signed Intermediate Certificate ({{ ca.name }})
+      when: intermediate_ca_cert.data.data.certificate is not defined
+      community.hashi_vault.vault_write:
+        url: "{{ pki_hashi_vault_host }}"
+        token: "{{ vault_login_data.login.auth.client_token }}"
+        path: "{{ ca.vault_path }}/intermediate/set-signed"
+        data:
+          certificate: "{{ signed_intermediate_cert.data.data.certificate }}"
+      ignore_errors: "{{ ansible_check_mode }}"

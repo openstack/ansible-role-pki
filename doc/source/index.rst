@@ -1,3 +1,4 @@
+
 ==========================
 OpenStack-Ansible PKI role
 ==========================
@@ -8,6 +9,14 @@ between components in a deployment.
 
 To clone or view the source code for this repository, visit the role repository
 for `pki <https://opendev.org/openstack/ansible-role-pki>`_.
+
+Available backends
+~~~~~~~~~~~~~~~~~~
+
+.. toctree::
+   :maxdepth: 2
+
+   backends/index
 
 Default variables
 ~~~~~~~~~~~~~~~~~

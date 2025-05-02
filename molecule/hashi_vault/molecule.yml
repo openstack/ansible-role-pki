@@ -1,0 +1,58 @@
+---
+# Copyright 2025, Cleura AB.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    force: ${GALAXY_FORCE:-false}
+
+driver:
+  name: docker
+
+platforms:
+  - name: "pki-hashi-vault-main"
+    image: "${DOCKER_REGISTRY:-quay.io/gotmax23}/${DOCKER_IMAGE_TAG:-debian-systemd:bookworm}"
+    pre_build_image: true
+    privileged: true
+    systemd: true
+    networks:
+      - name: molecule-network
+  - name: "pki-hashi-vault-openbao"
+    image: "quay.io/openbao/openbao:2.2"
+    command: bao server -dev -dev-root-token-id="secret-root-token" -dev-listen-address=0.0.0.0:8200
+    pre_build_image: true
+    privileged: true
+    networks:
+      - name: molecule-network
+    # not a part of any group to avoid running playbooks against this host
+    groups: []
+
+provisioner:
+  name: ansible
+  lint:
+    name: ansible-lint
+  playbooks:
+    prepare: prepare.yml
+    converge: ../../examples/playbook.yml
+    verify: verify.yml
+  inventory:
+    links:
+      group_vars: ./group_vars/
+  config_options:
+    defaults:
+      inject_facts_as_vars: false
+
+scenario:
+  name: hashi_vault
