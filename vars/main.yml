@@ -28,3 +28,31 @@ _pki_certificates_defs: "{{ pki_certificates | union(_pki_certificates_candidate
 # Gather certificate installation definitions from hostvars
 _pki_install_certificates_candidates: "{{ query('vars', *query('varnames', '^' ~ pki_search_install_certificates_pattern)) | flatten(levels=1) }}"
 _pki_install_certificates_defs: "{{ pki_install_certificates | union(_pki_install_certificates_candidates) | rejectattr('condition', 'false') }}"
+
+# Command used to update CA trust store
+pki_ca_install_command:
+  apt: "update-ca-certificates"
+  dnf: "update-ca-trust extract"
+
+# locations of system trust stores to install CA certs to
+pki_trust_store_location:
+  apt: /usr/local/share/ca-certificates/
+  dnf: /etc/pki/ca-trust/source/anchors/
+
+# standalone backend variables
+cert_dir: "{{ pki_dir }}/certs"
+# subdirectories to be created for holding server certs/keys/csr
+pki_cert_dirs:
+  - path: "{{ pki_dir }}"
+  - path: "{{ pki_dir ~ '/certs' }}"
+    mode: "{{ pki_cert_dir_mode }}"
+  - path: "{{ pki_dir ~ '/certs/csr' }}"
+    mode: "{{ pki_key_dir_mode }}"
+  - path: "{{ pki_dir ~ '/certs/private' }}"
+    mode: "{{ pki_key_dir_mode }}"
+  - path: "{{ pki_dir ~ '/certs/certs' }}"
+    mode: "{{ pki_cert_dir_mode }}"
+# directories for certificate authorities on the CA host
+pki_ca_dirs:
+  - path: "{{ pki_dir }}"
+  - path: "{{ pki_dir ~ '/roots' }}"

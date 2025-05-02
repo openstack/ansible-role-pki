@@ -16,24 +16,16 @@
 - name: Slurp up CA certificates from pki setup host ({{ pki_setup_host }})
   delegate_to: "{{ pki_setup_host }}"
   ansible.builtin.slurp:
-    src: "{{ item.src | default(pki_dir ~ '/roots/' ~ item.name ~ '/certs/' ~ item.name ~ '.crt') }}"
+    src: "{{ ca.src | default(pki_dir ~ '/roots/' ~ ca.name ~ '/certs/' ~ ca.name ~ '.crt') }}"
   register: _ca_slurp
   run_once: true
-  loop: "{{ _pki_install_ca_defs }}"
   ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Copy CA certificates to target host
   ansible.builtin.copy:
-    content: "{{ item.content | b64decode }}"
-    dest: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ item.item.filename | default(item.item.name ~ '.crt') }}"
+    content: "{{ _ca_slurp.content | b64decode }}"
+    dest: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ ca.filename | default(ca.name ~ '.crt') }}"
   register: ca_copy
-  loop: "{{ _ca_slurp.results | default([]) }}"
-  loop_control:
-    label: "{{ loop_label | to_json }}"
-  vars:
-    loop_label:
-      dest: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ item.item.filename | default(item.item.name ~ '.crt') }}"
-  when: item.skipped is not defined
   ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Update CA store

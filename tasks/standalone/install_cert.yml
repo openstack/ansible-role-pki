@@ -1,0 +1,58 @@
+---
+# Copyright 2025, Cleura AB
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Slurp up server certificate from pki setup host ({{ pki_setup_host }})
+  vars:
+    # location for the certificates on the PKI host
+    cert_dir: "{{ pki_dir }}/certs"
+
+    # construct the path to the source when "name" is specified
+    _source_files:
+      "certificate": "{{ cert_dir ~ '/certs/' ~ install_cert.name ~ '.crt' }}"
+      "certificate_chain": "{{ cert_dir ~ '/certs/' ~ install_cert.name ~ '-chain.crt' }}"
+      "ca_bundle": "{{ cert_dir ~ '/certs/' ~ install_cert.name ~ '-ca_bundle.crt' }}"
+      "private_key": "{{ cert_dir ~ '/private/' ~ install_cert.name ~ '.key.pem' }}"
+
+    # pick the source based on the type
+    _source: "{{ _source_files[install_cert.type | default('certificate')] }}"
+
+    # detect a valid value of "src"
+    _use_src: "{{ install_cert.src is defined and install_cert.src is truthy }}"
+  delegate_to: "{{ pki_setup_host }}"
+  ansible.builtin.slurp:
+    src: "{{ _use_src | ternary(install_cert.src, _source) }}"
+  register: _cert_slurp
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Create certificate destination directory ({{ install_cert.dest }})
+  ansible.builtin.file:
+    path: "{{ install_cert.dest | dirname }}"
+    state: directory
+    mode: "{{ pki_cert_dir_mode }}"
+
+- name: Install Server certificate to targets ({{ install_cert.dest }})
+  vars:
+    _mode : "{{ install_cert.mode | d(pki_file_mode[install_cert.type | d('certificate')]) }}"
+    _owner: "{{ install_cert.owner | default(pki_install_owner) }}"
+    _group: "{{ install_cert.group | default(pki_install_group) }}"
+  ansible.builtin.copy:
+    content: "{{ _cert_slurp.content | b64decode }}"
+    dest: "{{ install_cert.dest }}"
+    owner: "{{ _owner }}"
+    group: "{{ _group }}"
+    mode: "{{ _mode }}"
+  ignore_errors: "{{ ansible_check_mode }}"
+  notify:
+    - "{{ pki_handler_cert_installed }}"

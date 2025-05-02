@@ -13,75 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Create Server certificates
-  ansible.builtin.include_tasks: "{{ pki_backend }}/create_cert.yml"
+- name: Sign server certificates
+  ansible.builtin.include_tasks: "{{ cert.backend | default(pki_backend) }}/sign_cert.yml"
   loop: "{{ _pki_certificates_defs }}"
   loop_control:
     loop_var: cert
-  vars:
-    cert_dir: "{{ pki_dir }}/certs"
+    label: "{{ cert.name }}"
   when:
     - pki_create_certificates | default(true)
 
-- name: Slurp up server certificates from pki setup host ({{ pki_setup_host }})
-  vars:
-    # location for the certificates on the PKI host
-    cert_dir: "{{ pki_dir }}/certs"
-
-    # construct the path to the source when "name" is specified
-    _source_files:
-      "certificate": "{{ cert_dir ~ '/certs/' ~ item.name ~ '.crt' }}"
-      "certificate_chain": "{{ cert_dir ~ '/certs/' ~ item.name ~ '-chain.crt' }}"
-      "ca_bundle": "{{ cert_dir ~ '/certs/' ~ item.name ~ '-ca_bundle.crt' }}"
-      "private_key": "{{ cert_dir ~ '/private/' ~ item.name ~ '.key.pem' }}"
-
-    # pick the source based on the type
-    _source: "{{ _source_files[item.type | default('certificate')] }}"
-
-    # detect a valid value of "src"
-    _use_src: "{{ item.src is defined and item.src is truthy }}"
-  delegate_to: "{{ pki_setup_host }}"
-  ansible.builtin.slurp:
-    src: "{{ _use_src | ternary(item.src, _source) }}"
-  register: _cert_slurp
+- name: Install server certificates
+  ansible.builtin.include_tasks: "{{ install_cert.backend | default(pki_backend) }}/install_cert.yml"
   loop: "{{ _pki_install_certificates_defs }}"
-  ignore_errors: "{{ ansible_check_mode }}"
-
-- name: Create certificate destination directories
-  ansible.builtin.file:
-    path: "{{ install }}"
-    state: directory
-    mode: "{{ pki_cert_dir_mode }}"
-  loop: "{{ _cert_slurp.results | map(attribute='item') | map(attribute='dest') | map('dirname') | unique }}"
   loop_control:
-    loop_var: install
-    label: "{{ loop_label | to_json }}"
-  vars:
-    loop_label:
-      path: "{{ install }}"
-      state: directory
-      mode: "{{ pki_cert_dir_mode }}"
-
-- name: Install Server certificates to targets
-  ansible.builtin.copy:
-    content: "{{ install.content | b64decode }}"
-    dest: "{{ install.item.dest }}"
-    owner: "{{ _owner }}"
-    group: "{{ _group }}"
-    mode: "{{ _mode }}"
-  loop: "{{ _cert_slurp.results }}"
-  loop_control:
-    loop_var: install
-    label: "{{ loop_label | to_json }}"
-  vars:
-    _mode : "{{ install.item.mode | d(pki_file_mode[install.item.type | d('certificate')]) }}"
-    _owner: "{{ install.item.owner | default(pki_install_owner) }}"
-    _group: "{{ install.item.group | default(pki_install_group) }}"
-    loop_label:
-      dest: "{{ install.item.dest }}"
-      owner: "{{ _owner }}"
-      group: "{{ _group }}"
-      mode: "{{ _mode }}"
-  ignore_errors: "{{ ansible_check_mode }}"
-  notify:
-    - "{{ pki_handler_cert_installed }}"
+    loop_var: install_cert
+    label: "{{ install_cert.dest }}"
+  when:
+    - pki_install_certificates | default(true)
