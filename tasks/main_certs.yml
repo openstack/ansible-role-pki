@@ -14,7 +14,7 @@
 # limitations under the License.
 
 - name: Create Server certificates
-  ansible.builtin.include_tasks: "{{ pki_method }}/create_cert.yml"
+  ansible.builtin.include_tasks: "{{ pki_backend }}/create_cert.yml"
   loop: "{{ _pki_certificates_defs }}"
   loop_control:
     loop_var: cert

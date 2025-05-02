@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Include {{ pki_method }} CA variables
+- name: Include {{ pki_backend }} CA variables
   ansible.builtin.include_vars:
-    file: "{{ pki_method ~ '_ca.yml' }}"
+    file: "{{ pki_backend ~ '_ca.yml' }}"
 
 - name: Create PKI directories
   ansible.builtin.file:
@@ -31,7 +31,7 @@
   check_mode: false
 
 - name: Create certificate authorities
-  ansible.builtin.include_tasks: "{{ pki_method }}/create_ca.yml"
+  ansible.builtin.include_tasks: "{{ pki_backend }}/create_ca.yml"
   loop: "{{ _pki_ca_defs }}"
   loop_control:
     loop_var: ca

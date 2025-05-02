@@ -148,8 +148,9 @@ pki_search_install_certificates_pattern: "pki_install_certificates_"
 #     group: "myservice"
 #     mode: "0644"
 
-# method used to create the certificates
-pki_method: standalone
+# default backend used to create the certificates
+# NOTE(damiandabrowski): Remove backwards compatbility with pki_method after 2026.1
+pki_backend: "{{ pki_method | default(openstack_pki_backend | default('standalone')) }}"
 
 # Handlers naming
 pki_handler_ca_changed: "ca cert changed"
