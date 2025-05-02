@@ -83,7 +83,10 @@ pki_search_certificates_pattern: "pki_certificates_"
 #   - name: "SnakeWeb"
 #     provider: ownca
 #     cn: "www.snakeoil.com"
-#     san: "DNS:www.snakeoil.com,DNS:snakeoil.com"
+#     san:
+#       dns:
+#         - www.snakeoil.com
+#         - snakeoil.com
 #   - name: "SnakeMail"
 #     signed_by: "SnakeRootIntermediate"
 #     provider: ownca
@@ -95,7 +98,12 @@ pki_search_certificates_pattern: "pki_certificates_"
 #   - name: "myservice_{{ ansible_facts['hostname'] }}"
 #     cn: "{{ ansible_facts['hostname'] }}"
 #     provider: ownca
-#     san: "{{ 'DNS:' ~ ansible_facts['hostname'] ~  ',DNS:' ~ ansible_facts['fqdn'] ~ ',IP:' ~ ansible_facts['default_ipv4'] }}"
+#     san:
+#       dns:
+#         - "{{ ansible_facts['hostname'] }}"
+#         - "{{ ansible_facts['fqdn'] }}"
+#       ip:
+#         - "{{ ansible_facts['default_ipv4'] }}"
 #     signed_by: "SnakeRootIntermediate"
 
 # set this to the name of the certificate to regenerate, or to 'true' to regenerate all
