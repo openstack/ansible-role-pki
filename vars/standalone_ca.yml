@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # directories for certificate authorities on the CA host
-pki_ca_dirs:
+_pki_ca_dirs:
   - path: "{{ pki_dir }}"
   - path: "{{ pki_dir ~ '/roots' }}"
 
