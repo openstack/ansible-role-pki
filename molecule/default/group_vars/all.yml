@@ -10,6 +10,7 @@ molecule_packages:
   redhat:
     - ca-certificates
     - python3-cryptography
+    - python3-setuptools
     - gnutls-utils
     - iproute
 
