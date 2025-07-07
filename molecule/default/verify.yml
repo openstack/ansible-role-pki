@@ -26,6 +26,7 @@
           - ca_3_stat.stat.exists
 
     # Check that certificates are installed (or absent) at the correct path
+    # 1 installed via "src"
     - ansible.builtin.stat:
         path: "{{ functional_install_cert_1_dest }}"
       register: cert_1_stat
@@ -42,6 +43,24 @@
         path: "{{ functional_install_key_1_dest }}"
       register: key_1_stat
 
+    # 1 installed via "name" and "type"
+    - ansible.builtin.stat:
+        path: "{{ functional_install_cert_name_1_dest }}"
+      register: cert_name_1_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_chain_name_1_dest }}"
+      register: chain_name_1_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_ca_bundle_name_1_dest }}"
+      register: chain_name_1_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_key_name_1_dest }}"
+      register: key_name_1_stat
+
+    # others
     - ansible.builtin.stat:
         path: "{{ functional_install_cert_2_dest }}"
       register: cert_2_stat
@@ -76,6 +95,9 @@
           - chain_1_stat.stat.exists
           - ca_bundle_1_stat.stat.exists
           - key_1_stat.stat.exists
+          - cert_name_1_stat.stat.exists
+          - chain_name_1_stat.stat.exists
+          - key_name_1_stat.stat.exists
           - cert_2_stat.stat.exists
           - chain_2_stat.stat.exists
           - ca_bundle_2_stat.stat.exists

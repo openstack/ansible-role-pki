@@ -24,9 +24,25 @@
     - pki_create_certificates | default(true)
 
 - name: Slurp up server certificates from pki setup host ({{ pki_setup_host }})
+  vars:
+    # location for the certificates on the PKI host
+    cert_dir: "{{ pki_dir }}/certs"
+
+    # construct the path to the source when "name" is specified
+    _source_files:
+      "certificate": "{{ cert_dir ~ '/certs/' ~ item.name ~ '.crt' }}"
+      "certificate_chain": "{{ cert_dir ~ '/certs/' ~ item.name ~ '-chain.crt' }}"
+      "ca_bundle": "{{ cert_dir ~ '/certs/' ~ item.name ~ '-ca_bundle.crt' }}"
+      "private_key": "{{ cert_dir ~ '/private/' ~ item.name ~ '.key.pem' }}"
+
+    # pick the source based on the type
+    _source: "{{ _source_files[item.type | default('certificate')] }}"
+
+    # detect a valid value of "src"
+    _use_src: "{{ item.src is defined and item.src is truthy }}"
   delegate_to: "{{ pki_setup_host }}"
   ansible.builtin.slurp:
-    src: "{{ item.src }}"
+    src: "{{ _use_src | ternary(item.src, _source) }}"
   register: _cert_slurp
   loop: "{{ _pki_install_certificates_defs }}"
   ignore_errors: "{{ ansible_check_mode }}"
