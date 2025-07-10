@@ -17,7 +17,8 @@
   vars:
     ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
     _cert_file: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '.crt' }}"
-    _cert_chain_file: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '-chain.crt' }}"
+    _cert_full_chain_file: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '-chain.crt' }}"
+    _cert_ca_bundle_file: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '-ca_bundle.crt' }}"
     _ca_file: "{{ pki_dir ~ '/roots/' ~ cert.signed_by ~ '/certs/' ~ cert.signed_by ~ '.crt' }}"
   delegate_to: "{{ pki_setup_host }}"
   block:
@@ -79,7 +80,13 @@
         dest: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '.info' }}"
       when: cert_crt is changed
 
-    - name: Create certificate chain for {{ cert.name }}
-      ansible.builtin.shell:
-        cmd: "cat {{ _cert_file }} {{ _ca_file }} > {{ _cert_chain_file }}"
-        creates: "{{ (cert_crt is not changed) | ternary(_cert_chain_file, omit) }}"
+    - name: Create certificate ca bundle for {{ cert.name }}
+      ansible.builtin.copy:
+        src: "{{ _ca_file }}"
+        remote_src: true
+        dest: "{{ _cert_ca_bundle_file }}"
+
+    - name: Create certificate full chain for {{ cert.name }}
+      shell:
+        cmd: "cat {{ _cert_file }} {{ _ca_file }} > {{ _cert_full_chain_file }}"
+        creates: "{{ (cert_crt is not changed) | ternary(_cert_full_chain_file, omit) }}"

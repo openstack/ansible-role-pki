@@ -126,6 +126,7 @@ foo_certificates_variable:
 # Certificates to install from the default variable
 functional_install_cert_1_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_1.crt' }}"
 functional_install_chain_1_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_1-chain.crt' }}"
+functional_install_ca_bundle_1_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_1-ca_bundle.crt' }}"
 functional_install_key_1_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_1.key.pem' }}"
 
 pki_install_certificates:
@@ -136,6 +137,11 @@ pki_install_certificates:
     mode: "0644"
   - src: "{{ pki_dir ~ '/certs/certs/' ~ ansible_facts['hostname'] ~ '_1-chain.crt' }}"
     dest: "{{ functional_install_chain_1_dest }}"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+  - src: "{{ pki_dir ~ '/certs/certs/' ~ ansible_facts['hostname'] ~ '_1-ca_bundle.crt' }}"
+    dest: "{{ functional_install_ca_bundle_1_dest }}"
     owner: "root"
     group: "root"
     mode: "0644"
@@ -151,6 +157,7 @@ pki_search_install_certificates_pattern: "foo_install_certificates_"
 # Certificates to isntall from a custom variable, with conditionals
 functional_install_cert_2_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_2.crt' }}"
 functional_install_chain_2_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_2-chain.crt' }}"
+functional_install_ca_bundle_2_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_2-ca_bundle.crt' }}"
 functional_install_key_2_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_2.key.pem' }}"
 
 functional_install_cert_3_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_3.crt' }}"
@@ -166,6 +173,12 @@ foo_install_certificates_variable:
     condition: true
   - src: "{{ pki_dir ~ '/certs/certs/' ~ ansible_facts['hostname'] ~ '_2-chain.crt' }}"
     dest: "{{ functional_install_chain_2_dest }}"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    condition: true
+  - src: "{{ pki_dir ~ '/certs/certs/' ~ ansible_facts['hostname'] ~ '_2-ca_bundle.crt' }}"
+    dest: "{{ functional_install_ca_bundle_2_dest }}"
     owner: "root"
     group: "root"
     mode: "0644"

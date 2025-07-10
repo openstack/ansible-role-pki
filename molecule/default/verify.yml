@@ -35,6 +35,10 @@
       register: chain_1_stat
 
     - ansible.builtin.stat:
+        path: "{{ functional_install_ca_bundle_1_dest }}"
+      register: ca_bundle_1_stat
+
+    - ansible.builtin.stat:
         path: "{{ functional_install_key_1_dest }}"
       register: key_1_stat
 
@@ -45,6 +49,10 @@
     - ansible.builtin.stat:
         path: "{{ functional_install_chain_2_dest }}"
       register: chain_2_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_ca_bundle_2_dest }}"
+      register: ca_bundle_2_stat
 
     - ansible.builtin.stat:
         path: "{{ functional_install_key_2_dest }}"
@@ -66,8 +74,11 @@
         that:
           - cert_1_stat.stat.exists
           - chain_1_stat.stat.exists
+          - ca_bundle_1_stat.stat.exists
           - key_1_stat.stat.exists
           - cert_2_stat.stat.exists
+          - chain_2_stat.stat.exists
+          - ca_bundle_2_stat.stat.exists
           - key_2_stat.stat.exists
           - not cert_3_stat.stat.exists
           - not chain_3_stat.stat.exists
