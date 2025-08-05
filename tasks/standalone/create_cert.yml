@@ -20,6 +20,7 @@
     _cert_full_chain_file: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '-chain.crt' }}"
     _cert_ca_bundle_file: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '-ca_bundle.crt' }}"
     _ca_file: "{{ pki_dir ~ '/roots/' ~ cert.signed_by ~ '/certs/' ~ cert.signed_by ~ '.crt' }}"
+    _ca_bundle_file: "{{ pki_dir ~ '/roots/' ~ cert.signed_by ~ '/certs/' ~ cert.signed_by ~ '-chain.crt' }}"
   delegate_to: "{{ pki_setup_host }}"
   block:
     - name: Generate certificate private key for {{ cert.name }}
@@ -82,7 +83,7 @@
 
     - name: Create certificate ca bundle for {{ cert.name }}
       ansible.builtin.copy:
-        src: "{{ _ca_file }}"
+        src: "{{ _ca_bundle_file }}"
         remote_src: true
         dest: "{{ _cert_ca_bundle_file }}"
 
