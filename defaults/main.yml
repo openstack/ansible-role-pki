@@ -163,3 +163,10 @@ pki_cert_mode: "0644"
 pki_cert_dir_mode: "0755"
 pki_key_mode: "0600"
 pki_key_dir_mode: "0700"
+
+# permissions used when files are installed on the target
+pki_file_mode:
+  certificate: "{{ pki_cert_mode }}"
+  certificate_chain: "{{ pki_cert_mode }}"
+  ca_bundle: "{{ pki_cert_mode }}"
+  private_key: "{{ pki_key_mode }}"

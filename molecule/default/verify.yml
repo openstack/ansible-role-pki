@@ -96,8 +96,11 @@
           - ca_bundle_1_stat.stat.exists
           - key_1_stat.stat.exists
           - cert_name_1_stat.stat.exists
+          - cert_name_1_stat.stat.mode == "0644"
           - chain_name_1_stat.stat.exists
+          - chain_name_1_stat.stat.mode == "0644"
           - key_name_1_stat.stat.exists
+          - key_name_1_stat.stat.mode == "0600"
           - cert_2_stat.stat.exists
           - chain_2_stat.stat.exists
           - ca_bundle_2_stat.stat.exists

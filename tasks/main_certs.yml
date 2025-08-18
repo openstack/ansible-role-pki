@@ -51,7 +51,7 @@
   ansible.builtin.file:
     path: "{{ install }}"
     state: directory
-    mode: "0755"
+    mode: "{{ pki_cert_dir_mode }}"
   loop: "{{ _cert_slurp.results | map(attribute='item') | map(attribute='dest') | map('dirname') | unique }}"
   loop_control:
     loop_var: install
@@ -60,7 +60,7 @@
     loop_label:
       path: "{{ install }}"
       state: directory
-      mode: "0755"
+      mode: "{{ pki_cert_dir_mode }}"
 
 - name: Install Server certificates to targets
   ansible.builtin.copy:
@@ -68,17 +68,18 @@
     dest: "{{ install.item.dest }}"
     owner: "{{ install.item.owner | default(omit) }}"
     group: "{{ install.item.group | default(omit) }}"
-    mode: "{{ install.item.mode | default('0644') }}"
+    mode: "{{ _mode }}"
   loop: "{{ _cert_slurp.results }}"
   loop_control:
     loop_var: install
     label: "{{ loop_label | to_json }}"
   vars:
+    _mode : "{{ install.item.mode | d(pki_file_mode[install.item.type | d('certificate')]) }}"
     loop_label:
       dest: "{{ install.item.dest }}"
       owner: "{{ install.item.owner | default(omit) }}"
       group: "{{ install.item.group | default('omit') }}"
-      mode: "{{ install.item.mode | default('0644') }}"
+      mode: "{{ _mode }}"
   ignore_errors: "{{ ansible_check_mode }}"
   notify:
     - "{{ pki_handler_cert_installed }}"
