@@ -170,3 +170,9 @@ pki_file_mode:
   certificate_chain: "{{ pki_cert_mode }}"
   ca_bundle: "{{ pki_cert_mode }}"
   private_key: "{{ pki_key_mode }}"
+
+# file ownership when files are installed on the target
+#  applies to all files installed
+#  or, applies to all files not having a more specific owner:group in pki_install_certificates
+pki_install_owner: "root"
+pki_install_group: "root"

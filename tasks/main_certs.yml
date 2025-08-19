@@ -66,8 +66,8 @@
   ansible.builtin.copy:
     content: "{{ install.content | b64decode }}"
     dest: "{{ install.item.dest }}"
-    owner: "{{ install.item.owner | default(omit) }}"
-    group: "{{ install.item.group | default(omit) }}"
+    owner: "{{ _owner }}"
+    group: "{{ _group }}"
     mode: "{{ _mode }}"
   loop: "{{ _cert_slurp.results }}"
   loop_control:
@@ -75,10 +75,12 @@
     label: "{{ loop_label | to_json }}"
   vars:
     _mode : "{{ install.item.mode | d(pki_file_mode[install.item.type | d('certificate')]) }}"
+    _owner: "{{ install.item.owner | default(pki_install_owner) }}"
+    _group: "{{ install.item.group | default(pki_install_group) }}"
     loop_label:
       dest: "{{ install.item.dest }}"
-      owner: "{{ install.item.owner | default(omit) }}"
-      group: "{{ install.item.group | default('omit') }}"
+      owner: "{{ _owner }}"
+      group: "{{ _group }}"
       mode: "{{ _mode }}"
   ignore_errors: "{{ ansible_check_mode }}"
   notify:

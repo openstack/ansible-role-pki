@@ -2,6 +2,15 @@
 - name: Prepare
   hosts: all
   tasks:
+    - name: Create test group
+      ansible.builtin.group:
+        name: test
+
+    - name: Create test user
+      ansible.builtin.user:
+        name: test
+        group: test
+
     - name: Update apt cache
       ansible.builtin.apt:
         update_cache: true

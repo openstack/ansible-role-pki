@@ -54,7 +54,7 @@
 
     - ansible.builtin.stat:
         path: "{{ functional_install_ca_bundle_name_1_dest }}"
-      register: chain_name_1_stat
+      register: ca_bundle_name_1_stat
 
     - ansible.builtin.stat:
         path: "{{ functional_install_key_name_1_dest }}"
@@ -92,15 +92,42 @@
     - ansible.builtin.assert:
         that:
           - cert_1_stat.stat.exists
+          - cert_1_stat.stat.pw_name == "root"
+          - cert_1_stat.stat.gr_name == "root"
+
           - chain_1_stat.stat.exists
+          - chain_1_stat.stat.mode == "0755"
+          - chain_1_stat.stat.pw_name == "root"
+          - chain_1_stat.stat.gr_name == "root"
+
           - ca_bundle_1_stat.stat.exists
+          - ca_bundle_1_stat.stat.pw_name == "root"
+          - ca_bundle_1_stat.stat.gr_name == "root"
+
           - key_1_stat.stat.exists
+          - key_1_stat.stat.pw_name == "root"
+          - key_1_stat.stat.gr_name == "root"
+
           - cert_name_1_stat.stat.exists
           - cert_name_1_stat.stat.mode == "0644"
+          - cert_name_1_stat.stat.pw_name == "test"
+          - cert_name_1_stat.stat.gr_name == "root"
+
           - chain_name_1_stat.stat.exists
           - chain_name_1_stat.stat.mode == "0644"
+          - chain_name_1_stat.stat.pw_name == "root"
+          - chain_name_1_stat.stat.gr_name == "test"
+
+          - ca_bundle_name_1_stat.stat.exists
+          - ca_bundle_name_1_stat.stat.mode == "0644"
+          - ca_bundle_name_1_stat.stat.pw_name == "test"
+          - ca_bundle_name_1_stat.stat.gr_name == "test"
+
           - key_name_1_stat.stat.exists
           - key_name_1_stat.stat.mode == "0600"
+          - key_name_1_stat.stat.pw_name == "root"
+          - key_name_1_stat.stat.gr_name == "root"
+
           - cert_2_stat.stat.exists
           - chain_2_stat.stat.exists
           - ca_bundle_2_stat.stat.exists
