@@ -135,6 +135,13 @@
         state: link
       when: ca_ownca_crt is changed or ca_selfsigned_crt is changed
 
+    - name: Symlink cert path to the chain file for selfsigned CA
+      ansible.builtin.file:
+        src: "{{ (ca_cert_prefix ~ '.crt') | basename }}"
+        dest: "{{ ca_cert_prefix ~ '-chain.crt' }}"
+        state: link
+      when: ca.provider == 'selfsigned'
+
     - name: Get certificate info for {{ ca.name }}
       community.crypto.x509_certificate_info:
         path: "{{ ca_selfsigned_crt.filename | default(ca_ownca_crt.filename) }}"
