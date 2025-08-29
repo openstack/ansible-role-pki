@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Include {{ pki_method }} CA variables
+- name: Include {{ pki_backend }} CA variables
   ansible.builtin.include_vars:
-    file: "{{ pki_method ~ '_ca.yml' }}"
+    file: "{{ pki_backend ~ '_ca.yml' }}"
 
 - name: Install certificate authorities
-  ansible.builtin.include_tasks: "{{ pki_method }}/install_ca.yml"
+  ansible.builtin.include_tasks: "{{ pki_backend }}/install_ca.yml"
   when: _pki_install_ca_defs | length > 0
