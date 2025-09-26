@@ -33,6 +33,13 @@
       register: cert_privkey
 
     - name: Create the CSR for {{ cert.name }}
+      vars:
+        generated_san: >-
+          {{
+            ['DNS:' + (cert.san.dns | unique | join(',DNS:')) if cert.san.dns | default([]) else '',
+             'IP:' + (cert.san.ip | unique | join(',IP:')) if cert.san.ip | default([]) else '']
+            | select() | join(',')
+          }}
       community.crypto.openssl_csr:
         path: "{{ cert_dir ~ '/csr/' ~ cert.name ~ '.csr' }}"
         privatekey_path: "{{ cert_privkey.filename }}"
@@ -42,7 +49,9 @@
         basic_constraints: "{{ cert.basic_constraints | default(omit) }}"
         key_usage: "{{ cert.key_usage | default(omit) }}"
         extended_key_usage: "{{ cert.extended_key_usage | default(omit) }}"
-        subject_alt_name: "{{ cert.san | default(omit) }}"
+        # NOTE(damiandabrowski) After 2026.1 switch to just:
+        #                       subject_alt_name: "{{ generated_san | default(omit) }}"
+        subject_alt_name: "{{ (cert.san is defined and cert.san is not string) | ternary(generated_san, cert.san | default(omit)) }}"
         country_name: "{{ cert.country_name | default(omit) }}"
         state_or_province_name: "{{ cert.state_or_province_name | default(omit) }}"
         locality_name: "{{ cert.locality_name | default(omit) }}"
