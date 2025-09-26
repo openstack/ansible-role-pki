@@ -13,29 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Include {{ pki_backend }} CA variables
-  ansible.builtin.include_vars:
-    file: "{{ pki_backend ~ '_ca.yml' }}"
-
-- name: Create PKI directories
-  ansible.builtin.file:
-    state: directory
-    path: "{{ item.path }}"
-    owner: "{{ item.owner | default(pki_owner) | default(omit) }}"
-    group: "{{ item.group | default(pki_group) | default(omit) }}"
-    mode: "{{ item.mode | default('0755') }}"
-  with_items:
-    - "{{ pki_ca_dirs }}"
-    - "{{ pki_cert_dirs }}"
-  delegate_to: "{{ pki_setup_host }}"
-  check_mode: false
-
 - name: Create certificate authorities
-  ansible.builtin.include_tasks: "{{ pki_backend }}/create_ca.yml"
+  ansible.builtin.include_tasks: "{{ ca.backend | default(pki_backend) }}/create_ca.yml"
   loop: "{{ _pki_ca_defs }}"
   loop_control:
     loop_var: ca
-  vars:
-    ca_dir: "{{ pki_dir }}/roots/{{ ca.name }}"
-    ca_cert_prefix: "{{ ca_dir ~ '/certs/' ~ ca.name }}"
   when: pki_create_ca | bool

@@ -72,11 +72,6 @@ pki_search_install_ca_pattern: "pki_install_ca_"
 # set this to the name of a CA to regenerate, or to 'true' to regenerate all
 pki_regen_ca: ""
 
-# locations of system trust stores to install CA certs to
-pki_trust_store_location:
-  apt: /usr/local/share/ca-certificates/
-  dnf: /etc/pki/ca-trust/source/anchors/
-
 # Server certificates to create
 pki_certificates: []
 
@@ -112,15 +107,6 @@ pki_setup_host: localhost
 # Python interpreter that will be used during cert generation
 pki_setup_host_python_interpreter: "{{ (pki_setup_host == 'localhost') | ternary(ansible_playbook_python, ansible_facts['python']['executable']) }}"
 
-# base directory for the CA and server certificates
-pki_dir: "/etc/pki"
-
-# subdirectories to be created for holding CA certs/keys/csr
-pki_ca_dirs: "{{ _pki_ca_dirs }}"
-
-# subdirectories to be created for holding server certs/keys/csr
-pki_cert_dirs: "{{ _pki_cert_dirs }}"
-
 # certificates to install
 pki_install_certificates: []
 
@@ -148,15 +134,18 @@ pki_search_install_certificates_pattern: "pki_install_certificates_"
 #     group: "myservice"
 #     mode: "0644"
 
-# default backend used to create the certificates
-# NOTE(damiandabrowski): Remove backwards compatbility with pki_method after 2026.1
-pki_backend: "{{ pki_method | default(openstack_pki_backend | default('standalone')) }}"
-
 # Handlers naming
 pki_handler_ca_changed: "ca cert changed"
 pki_handler_cert_changed: "cert changed"
 pki_handler_cert_installed: "cert installed"
 
+# default backend used to create the certificates
+# NOTE(damiandabrowski): Remove backwards compatbility with pki_method after 2026.1
+pki_backend: "{{ pki_method | default(openstack_pki_backend | default('standalone')) }}"
+
+# standalone backend variables
+# base directory for the CA and server certificates
+pki_dir: "/etc/pki"
 # Default permissions used on pki_setup_host
 # pki_owner: "root"
 # pki_group: "root"

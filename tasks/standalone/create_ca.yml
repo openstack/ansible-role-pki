@@ -13,10 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Create certificate {{ cert.name }}
+- name: Create PKI directories
+  ansible.builtin.file:
+    state: directory
+    path: "{{ item.path }}"
+    owner: "{{ item.owner | default(pki_owner) | default(omit) }}"
+    group: "{{ item.group | default(pki_group) | default(omit) }}"
+    mode: "{{ pki_cert_dir_mode }}"
+  with_items:
+    - "{{ pki_ca_dirs }}"
+    - "{{ pki_cert_dirs }}"
+  delegate_to: "{{ pki_setup_host }}"
+  check_mode: false
+  run_once: true
+
+- name: Create certificate {{ ca.name }}
   vars:
     next_serial_no: "{{ serial_no['content'] | b64decode | int + 1  }}"
     ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
+    ca_dir: "{{ pki_dir }}/roots/{{ ca.name }}"
+    ca_cert_prefix: "{{ pki_dir }}/roots/{{ ca.name }}/certs/{{ ca.name }}"
   delegate_to: "{{ pki_setup_host }}"
   block:
     - name: Create directories for certificate authority {{ ca.name }}
@@ -80,9 +96,9 @@
         country_name: "{{ ca.country_name | default(omit) }}"
         state_or_province_name: "{{ ca.state_or_province_name | default(omit) }}"
         locality_name: "{{ ca.locality_name | default(omit) }}"
-        organization_name: "{{ ca.organizataion_name | default(omit) }}"
+        organization_name: "{{ ca.orgnization_name | default(omit) }}"
         organizational_unit_name: "{{ ca.organization_unit_name | default(omit) }}"
-        subject: "{{ cert.subject | default(omit) }}"
+        subject: "{{ ca.subject | default(omit) }}"
         backup: "{{ ca.backup | default(True) }}"
       register: ca_csr
       when:
@@ -111,7 +127,6 @@
         - "{{ pki_handler_ca_changed }}"
 
     - name: Sign the intermediate CA CSR for {{ ca.name }}
-      vars:
       community.crypto.x509_certificate:
         path: "{{ ca_cert_prefix ~ '-' ~ next_serial_no ~ '.crt' }}"
         csr_path: "{{ ca_csr.filename }}"
