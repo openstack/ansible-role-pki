@@ -92,6 +92,7 @@ pki_search_certificates_pattern: "pki_certificates_"
 #     provider: ownca
 #     cn: "imap.snakeoil.com"
 #     signed_by: "SnakeRootIntermediate"
+#     ttl: 30d
 
 # Example variable defining a server certificate from ansible host variables
 # pki_certificates_default:

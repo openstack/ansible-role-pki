@@ -68,6 +68,7 @@
         ownca_path: "{{ _ca_file }}"
         ownca_privatekey_path: "{{ pki_dir ~ '/roots/' ~ cert.signed_by ~ '/private/' ~ cert.signed_by ~ '.key.pem' }}"
         ownca_privatekey_passphrase: "{{ cert.ownca_key_passphrase | default(omit) }}"
+        ownca_not_after: "{{ ('ttl' in cert) | ternary('+' ~ cert.get('ttl'), omit) }}"
         provider: ownca
         force: "{{ pki_regen_cert == cert.name or ((pki_regen_cert | lower) == 'true') }}"
       register: cert_crt

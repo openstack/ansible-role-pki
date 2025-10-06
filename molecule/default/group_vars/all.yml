@@ -115,6 +115,7 @@ foo_certificates_variable:
     cn: "{{ ansible_facts['hostname'] }}"
     san: "{{ 'DNS:' ~ ansible_facts['hostname'] }}"
     signed_by: "ExampleCorpIntermediate"
+    ttl: 30d
     condition: true
   - name: "{{ ansible_facts['hostname'] }}_3"
     provider: ownca
@@ -168,7 +169,7 @@ pki_install_certificates:
 # Custom certificate installation search pattern
 pki_search_install_certificates_pattern: "foo_install_certificates_"
 
-# Certificates to isntall from a custom variable, with conditionals
+# Certificates to install from a custom variable, with conditionals
 functional_install_cert_2_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_2.crt' }}"
 functional_install_chain_2_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_2-chain.crt' }}"
 functional_install_ca_bundle_2_dest: "{{ '/root/' ~ ansible_facts['hostname'] ~ '_2-ca_bundle.crt' }}"

@@ -144,3 +144,22 @@
     - name: Validate server certificate against system trust store
       ansible.builtin.command: certtool --verify --infile "{{ functional_install_chain_2_dest }}"
       changed_when: false
+
+    - name: Fetch server certificate details
+      community.crypto.x509_certificate_info:
+        path: "{{ functional_install_chain_1_dest }}"
+      register: _functional_chain_1_dest
+
+    - name: Fetch server certificate details
+      community.crypto.x509_certificate_info:
+        path: "{{ functional_install_chain_2_dest }}"
+      register: _functional_chain_2_dest
+
+    - debug:
+        var: (_functional_chain_1_dest.not_after | to_datetime('%Y%m%d%H%M%S%fZ') - now()).days
+
+    - name: Ensure validity period for certificates
+      ansible.builtin.assert:
+        that:
+          - (_functional_chain_1_dest.not_after | to_datetime('%Y%m%d%H%M%S%fZ') - now()).days == 3649
+          - (_functional_chain_2_dest.not_after | to_datetime('%Y%m%d%H%M%S%fZ') - now()).days == 29
