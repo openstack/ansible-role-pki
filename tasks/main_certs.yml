@@ -29,4 +29,4 @@
     loop_var: install_cert
     label: "{{ install_cert.dest }}"
   when:
-    - pki_install_certificates | default(true)
+    - pki_install_certificates | length > 0

@@ -15,19 +15,19 @@
 
 # Gather CA definitions from hostvars
 _pki_ca_candidates: "{{ query('vars', *query('varnames', '^' ~ pki_search_authorities_pattern)) | flatten(levels=1) }}"
-_pki_ca_defs: "{{ pki_authorities | union(_pki_ca_candidates) | rejectattr('condition', 'false') }}"
+_pki_ca_defs: "{{ pki_authorities | union(_pki_ca_candidates) | openstack.osa.rejectattr('condition', 'false') }}"
 
 # Gather CA installation definitions from hostvars
 _pki_install_ca_candidates: "{{ query('vars', *query('varnames', '^' ~ pki_search_install_ca_pattern)) | flatten(levels=1) }}"
-_pki_install_ca_defs: "{{ pki_install_ca | union(_pki_install_ca_candidates) | rejectattr('condition', 'false') }}"
+_pki_install_ca_defs: "{{ pki_install_ca | union(_pki_install_ca_candidates) | openstack.osa.rejectattr('condition', 'false') }}"
 
 # Gather certificate definitions from hostvars
 _pki_certificates_candidates: "{{ query('vars', *query('varnames', '^' ~ pki_search_certificates_pattern)) | flatten(levels=1) }}"
-_pki_certificates_defs: "{{ pki_certificates | union(_pki_certificates_candidates) | rejectattr('condition', 'false') }}"
+_pki_certificates_defs: "{{ pki_certificates | union(_pki_certificates_candidates) | openstack.osa.rejectattr('condition', 'false') }}"
 
 # Gather certificate installation definitions from hostvars
 _pki_install_certificates_candidates: "{{ query('vars', *query('varnames', '^' ~ pki_search_install_certificates_pattern)) | flatten(levels=1) }}"
-_pki_install_certificates_defs: "{{ pki_install_certificates | union(_pki_install_certificates_candidates) | rejectattr('condition', 'false') }}"
+_pki_install_certificates_defs: "{{ pki_install_certificates | union(_pki_install_certificates_candidates) | openstack.osa.rejectattr('condition', 'false') }}"
 
 # Command used to update CA trust store
 pki_ca_install_command:
