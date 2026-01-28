@@ -1,0 +1,144 @@
+---
+# Copyright 2025, Cleura AB.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Verify
+  hosts: all
+  vars:
+    pki_trust_store_location:
+      apt: /usr/local/share/ca-certificates/
+      dnf: /etc/pki/ca-trust/source/anchors/
+  tasks:
+    # Check that certificate authorities are installed (or absent) at the correct path
+    - ansible.builtin.stat:
+        path: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ functional_ca_name_1 }}.crt"
+      register: ca_1_stat
+
+    - ansible.builtin.stat:
+        path: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ functional_ca_name_2 }}.crt"
+      register: ca_2_stat
+
+    - ansible.builtin.stat:
+        path: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ functional_ca_name_3 }}.crt"
+      register: ca_3_stat
+
+    - ansible.builtin.assert:
+        that:
+          - ca_1_stat.stat.exists
+          - not ca_2_stat.stat.exists
+          - ca_3_stat.stat.exists
+
+    # Check that certificates are installed (or absent) at the correct path
+    - ansible.builtin.stat:
+        path: "{{ functional_install_cert_1_dest }}"
+      register: cert_1_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_chain_1_dest }}"
+      register: chain_1_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_key_1_dest }}"
+      register: key_1_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_cert_2_dest }}"
+      register: cert_2_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_chain_2_dest }}"
+      register: chain_2_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_key_2_dest }}"
+      register: key_2_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_cert_3_dest }}"
+      register: cert_3_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_chain_3_dest }}"
+      register: chain_3_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_key_3_dest }}"
+      register: key_3_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_cert_4_dest }}"
+      register: cert_4_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_chain_4_dest }}"
+      register: chain_4_stat
+
+    - ansible.builtin.stat:
+        path: "{{ functional_install_key_4_dest }}"
+      register: key_4_stat
+
+    - ansible.builtin.assert:
+        that:
+          - cert_1_stat.stat.exists
+          - cert_1_stat.stat.mode == "0644"
+          - cert_1_stat.stat.uid == 65534
+          - cert_1_stat.stat.gid == 65534
+
+          - chain_1_stat.stat.exists
+          - chain_1_stat.stat.mode == "0755"
+          - chain_1_stat.stat.uid == 65534
+          - chain_1_stat.stat.gid == 65534
+
+          - key_1_stat.stat.exists
+          - key_1_stat.stat.mode == "0600"
+          - key_1_stat.stat.uid == 65534
+          - key_1_stat.stat.gid == 65534
+
+          - cert_2_stat.stat.exists
+          - cert_2_stat.stat.mode == "0644"
+          - cert_2_stat.stat.pw_name == "root"
+          - cert_2_stat.stat.gr_name == "root"
+
+          - not cert_3_stat.stat.exists
+          - not chain_3_stat.stat.exists
+          - not key_3_stat.stat.exists
+
+          - cert_4_stat.stat.exists
+          - cert_4_stat.stat.mode == "0644"
+          - cert_4_stat.stat.pw_name == "root"
+          - cert_4_stat.stat.gr_name == "root"
+
+          - chain_4_stat.stat.exists
+          - chain_4_stat.stat.mode == "0644"
+          - chain_4_stat.stat.pw_name == "root"
+          - chain_4_stat.stat.gr_name == "root"
+
+          - key_4_stat.stat.exists
+          - key_4_stat.stat.mode == "0600"
+          - key_4_stat.stat.pw_name == "root"
+          - key_4_stat.stat.gr_name == "root"
+
+    - name: Validate server certificate against system trust store
+      ansible.builtin.command: certtool --verify --infile "{{ item }}"
+      changed_when: false
+      loop:
+        - "{{ functional_install_chain_1_dest }}"
+        - "{{ functional_install_chain_2_dest }}"
+        - "{{ functional_install_chain_4_dest }}"
+
+    - name: Validate certificate against issuer names
+      ansible.builtin.shell: certtool --certificate-info --infile {{ item.cert }} | grep 'Issuer' | grep "{{ item.issuer }}"
+      changed_when: false
+      loop:
+        - {'cert': "{{ functional_install_cert_1_dest }}", 'issuer': 'Example Corp Openstack Infrastructure Intermediate CA' }
+        - {'cert': "{{ functional_install_cert_4_dest }}", 'issuer': 'FooAutorityInstalled' }

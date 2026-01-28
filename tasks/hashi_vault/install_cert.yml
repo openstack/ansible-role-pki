@@ -1,0 +1,7 @@
+# This file is just a placeholder.
+# install_cert.yml is a standard place for each PKI backend for the logic
+# responsible for installing certificates.
+# However, in this backend we cannot split the certificate issuing process
+# from the installation process because certificate keys are not stored on
+# any persistent storage (like we do in the standalone backend, for example).
+# That's why everything (issuing + installing cert) is done in sign_cert.yml.

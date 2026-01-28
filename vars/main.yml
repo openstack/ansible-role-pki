@@ -56,3 +56,6 @@ pki_cert_dirs:
 pki_ca_dirs:
   - path: "{{ pki_dir }}"
   - path: "{{ pki_dir ~ '/roots' }}"
+
+# hashi_vault backend variables
+pki_matching_install_certificates: "{{ _pki_install_certificates_defs | selectattr('name', 'defined') | selectattr('name', 'equalto', cert.name) | list }}"

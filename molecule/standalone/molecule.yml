@@ -32,4 +32,4 @@ provisioner:
       inject_facts_as_vars: false
 
 scenario:
-  name: default
+  name: standalone

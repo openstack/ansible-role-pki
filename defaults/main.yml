@@ -25,9 +25,7 @@ pki_search_authorities_pattern: "pki_authorities_"
 # Example variables defining a certificate authorities
 # pki_authorities_roots:
 #   - name: "SnakeRoot"
-#     provider: selfsigned
 #     email_address: "pki@snakeoil.com"
-#     basic_constraints: "CA:TRUE"
 #     cn: "Snake Oil Corp Root CA"
 #     country_name: "GB"
 #     state_or_province_name: "England"
@@ -38,11 +36,14 @@ pki_search_authorities_pattern: "pki_authorities_"
 #       - cRLSign
 #       - keyCertSign
 #     ttl: "3650d"
+#     # standalone backend only
+#     provider: selfsigned
+#     basic_constraints: "CA:TRUE"
+#     # hashi_vault backend only
 
 #pki_authorities_intermediates:
 #   - name: "SnakeRootIntermediate"
 #     email_address: "pki@snakeoil.com"
-#     provider: ownca
 #     cn: "Snake Oil Corp Openstack Infrastructure Intermediate CA"
 #     country_name: "GB"
 #     state_or_province_name: "England"
@@ -54,6 +55,10 @@ pki_search_authorities_pattern: "pki_authorities_"
 #       - keyCertSign
 #     ttl: "365d"
 #     signed_by: "SnakeRoot"
+#     # standalone backend only
+#     provider: ownca
+#     # hashi_vault backend only
+#     vault_path: pki_int
 
 # example variable of CA to install
 # pki_install_ca:
@@ -81,24 +86,24 @@ pki_search_certificates_pattern: "pki_certificates_"
 # Example variable defining a server certificate
 # pki_certificates_default:
 #   - name: "SnakeWeb"
-#     provider: ownca
 #     cn: "www.snakeoil.com"
 #     san:
 #       dns:
 #         - www.snakeoil.com
 #         - snakeoil.com
-#   - name: "SnakeMail"
-#     signed_by: "SnakeRootIntermediate"
+#     # standalone backend only
 #     provider: ownca
+#   - name: "SnakeMail"
 #     cn: "imap.snakeoil.com"
 #     signed_by: "SnakeRootIntermediate"
+#     # standalone backend only
+#     provider: ownca
 #     ttl: 30d
 
 # Example variable defining a server certificate from ansible host variables
 # pki_certificates_default:
 #   - name: "myservice_{{ ansible_facts['hostname'] }}"
 #     cn: "{{ ansible_facts['hostname'] }}"
-#     provider: ownca
 #     san:
 #       dns:
 #         - "{{ ansible_facts['hostname'] }}"
@@ -106,6 +111,8 @@ pki_search_certificates_pattern: "pki_certificates_"
 #       ip:
 #         - "{{ ansible_facts['default_ipv4'] }}"
 #     signed_by: "SnakeRootIntermediate"
+#     # standalone backend only
+#     provider: ownca
 
 # set this to the name of the certificate to regenerate, or to 'true' to regenerate all
 pki_regen_cert: ""
@@ -125,19 +132,22 @@ pki_search_install_certificates_pattern: "pki_install_certificates_"
 # Example variable for installation of server certificates with optional user supplied cert override
 # pki_install_certificates:
 #     # server certificate
-#   - src: "{{ user_ssl_cert | default(pki_dir ~ '/certs/certs/myservice_' ~ ansible_facts['hostname'] ~ '.crt') }}"
+#   - name: "{{ ansible_facts['hostname'] }}"
+#     type: "certificate_chain"
 #     dest: "{{ myservice_ssl_cert }}"
 #     owner: "root"
 #     group: "root"
 #     mode: "0644"
 #     #private key
-#   - src: "{{ myservice_user_ssl_key | default(pki_dir ~ 'certs/keys/myservice_' ~ ansible_facts['hostname'] ~ '.key.pem') }}"
+#   - name: "{{ ansible_facts['hostname'] }}"
+#     type: "private_key"
 #     dest: "{{ myservice_ssl_key }}"
 #     owner: "myservice"
 #     group: "myservice"
 #     mode: "0600"
 #     # intermediate CA
-#   - src: "{{ myservice_user_ssl_ca_cert | default(pki_dir ~ '/roots/SnakeRootIntermediate/certs/SnakeRootIntermediate.crt' }}"
+#   - name: "{{ ansible_facts['hostname'] }}"
+#     type: "ca_bundle"
 #     dest: "{{ myservice_ssl_ca_cert }}"
 #     owner: "myservice"
 #     group: "myservice"
@@ -148,22 +158,11 @@ pki_handler_ca_changed: "ca cert changed"
 pki_handler_cert_changed: "cert changed"
 pki_handler_cert_installed: "cert installed"
 
-# default backend used to create the certificates
-# NOTE(damiandabrowski): Remove backwards compatbility with pki_method after 2026.1
-pki_backend: "{{ pki_method | default(openstack_pki_backend | default('standalone')) }}"
-
-# standalone backend variables
-# base directory for the CA and server certificates
-pki_dir: "/etc/pki"
-# Default permissions used on pki_setup_host
-# pki_owner: "root"
-# pki_group: "root"
+# permissions used when files are installed on the target
 pki_cert_mode: "0644"
 pki_cert_dir_mode: "0755"
 pki_key_mode: "0600"
 pki_key_dir_mode: "0700"
-
-# permissions used when files are installed on the target
 pki_file_mode:
   certificate: "{{ pki_cert_mode }}"
   certificate_chain: "{{ pki_cert_mode }}"
@@ -175,3 +174,25 @@ pki_file_mode:
 #  or, applies to all files not having a more specific owner:group in pki_install_certificates
 pki_install_owner: "root"
 pki_install_group: "root"
+
+# default backend used to create the certificates
+# NOTE(damiandabrowski): Remove backwards compatbility with pki_method after 2026.1
+pki_backend: "{{ pki_method | default(openstack_pki_backend | default('standalone')) }}"
+
+# standalone backend variables
+# base directory for the CA and server certificates
+pki_dir: "/etc/pki"
+# Default permissions used on pki_setup_host
+# pki_owner: "root"
+# pki_group: "root"
+
+# hashi_vault backend variables
+pki_hashi_vault_role: "{{ openstack_pki_hashi_vault_role | default('default') }}"
+pki_hashi_vault_engine_mount_point: "{{ openstack_pki_hashi_vault_engine_mount_point | default('pki_int') }}"
+pki_hashi_vault_auth_method: userpass
+pki_hashi_vault_login:
+pki_hashi_vault_password:
+pki_hashi_vault_token:
+pki_hashi_vault_role_id:
+pki_hashi_vault_secret_id:
+pki_hashi_vault_jwt:
