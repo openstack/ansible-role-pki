@@ -23,7 +23,7 @@ driver:
 
 platforms:
   - name: "pki-hashi-vault-main"
-    image: "${DOCKER_REGISTRY:-quay.io/gotmax23}/${DOCKER_IMAGE_TAG:-debian-systemd:bookworm}"
+    image: "${DOCKER_REGISTRY:-quay.io/gotmax23}/${DOCKER_IMAGE_TAG:-debian-systemd:trixie}"
     pre_build_image: true
     privileged: true
     systemd: true
@@ -45,7 +45,7 @@ provisioner:
     name: ansible-lint
   playbooks:
     prepare: prepare.yml
-    converge: ../../examples/playbook.yml
+    converge: ../../tests/test.yml
     verify: verify.yml
   inventory:
     links:

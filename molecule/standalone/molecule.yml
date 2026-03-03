@@ -10,7 +10,7 @@ driver:
 
 platforms:
   - name: "pki-${MOLECULE_SCENARIO_NAME}"
-    image: "${DOCKER_REGISTRY:-quay.io/gotmax23}/${DOCKER_IMAGE_TAG:-debian-systemd:bookworm}"
+    image: "${DOCKER_REGISTRY:-quay.io/gotmax23}/${DOCKER_IMAGE_TAG:-debian-systemd:trixie}"
     command: ${DOCKER_COMMAND:-""}
     pre_build_image: true
     privileged: true
@@ -22,7 +22,7 @@ provisioner:
     name: ansible-lint
   playbooks:
     prepare: prepare.yml
-    converge: ../../examples/playbook.yml
+    converge: ../../tests/test.yml
     verify: verify.yml
   inventory:
     links:

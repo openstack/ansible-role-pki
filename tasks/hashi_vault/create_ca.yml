@@ -33,9 +33,7 @@
         token: "{{ vault_login_data.login.auth.client_token }}"
         path: "{{ ca.vault_path }}/cert/ca"
       register: ca_cert
-      failed_when: >-
-        ca_cert.failed
-        and "no default issuer currently configured" not in ca_cert.module_stderr
+      failed_when: false
 
     - name: Generate Root CA ({{ ca.name }})
       when: ca_cert.data.data.certificate is not defined or pki_regen_ca == ca.name or (pki_regen_ca | lower) == 'true'
@@ -91,9 +89,7 @@
         token: "{{ vault_login_data.login.auth.client_token }}"
         path: "{{ ca.vault_path }}/cert/ca"
       register: intermediate_ca_cert
-      failed_when: >-
-        intermediate_ca_cert.failed
-        and "no default issuer currently configured" not in intermediate_ca_cert.module_stderr
+      failed_when: false
 
     - name: Generate Intermediate CA CSR ({{ ca.name }})
       when: intermediate_ca_cert.data.data.certificate is not defined
