@@ -13,17 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# when the created CA certificates are changed
+# When the created CA certificates are changed
 - name: "{{ pki_handler_ca_changed }}"
   ansible.builtin.meta: noop
-  when: false
 
-# when the created server certificates are changed
+# When the created server certificates are changed
 - name: "{{ pki_handler_cert_changed }}"
   ansible.builtin.meta: noop
-  when: false
 
-# when a certificate is installed onto a server
+# When a certificate is installed onto a server
 - name: "{{ pki_handler_cert_installed }}"
   ansible.builtin.meta: noop
-  when: false
