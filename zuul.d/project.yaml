@@ -17,6 +17,7 @@
     templates:
       - check-requirements
       - openstack-ansible-deploy-infra_lxc-jobs
+      - openstack-ansible-deploy-openbao-jobs
       - openstack-ansible-linters-jobs
       - openstack-ansible-molecule
       - publish-openstack-docs-pti
