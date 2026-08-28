@@ -26,7 +26,6 @@ platforms:
     image: "${DOCKER_REGISTRY:-quay.io/gotmax23}/${DOCKER_IMAGE_TAG:-debian-systemd:trixie}"
     pre_build_image: true
     privileged: true
-    systemd: true
     networks:
       - name: molecule-network
   - name: "pki-hashi-vault-openbao"
