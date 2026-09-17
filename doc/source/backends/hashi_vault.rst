@@ -173,6 +173,12 @@ pki_install_ca
    * - name
      - ✔
      - Name of the authority to install
+   * - vault_path
+     - 𐄂
+     - PKI mount path on the vault server
+   * - backend
+     - 𐄂
+     - Backend to use when searching for ca certificate file
 
 pki_certificates
 ----------------
