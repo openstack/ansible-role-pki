@@ -35,7 +35,8 @@
 
     - name: Authenticate to {{ pki_hashi_vault_host }}
       ansible.builtin.include_tasks: "{{ cert.backend | default(pki_backend) }}/authenticate.yml"
-      when: vault_login_data is not defined
+      when:
+        - vault_login_data is not defined
 
     - name: Generate certificate {{ cert.name }}
       vars:

@@ -13,17 +13,24 @@
 # limitations under the License.
 
 - name: Authenticate to {{ pki_hashi_vault_host }}
-  ansible.builtin.include_tasks: "{{ ca_backend | default(pki_backend) }}/authenticate.yml"
-  when: vault_login_data is not defined
+  ansible.builtin.include_tasks: "hashi_vault/authenticate.yml"
+  when:
+    - vault_login_data is not defined
 
 - name: Fetch CA cert ({{ ca.name }})
   vars:
     ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
+    fallback_cert_path: "{{ (_pki_ca_defs
+      | selectattr('name', 'equalto', ca.name)
+      | map(attribute='vault_path', default='pki_vault')
+      | first) }}/cert/ca"
+    defined_cert_path: "{{ ca.vault_path | default('pki_vault') }}/cert/ca"
   delegate_to: "{{ pki_setup_host }}"
   community.hashi_vault.vault_read:
     url: "{{ pki_hashi_vault_host }}"
     token: "{{ vault_login_data.login.auth.client_token }}"
-    path: "{{ (_pki_ca_defs | selectattr('name', 'equalto', ca.name) | map(attribute='vault_path') | first) }}/cert/ca"
+    path: "{{ ca.vault_path is defined
+      | ternary(defined_cert_path, fallback_cert_path) }}"
   register: ca_cert
 
 - name: Copy CA certificate to target host ({{ ca.name }})
