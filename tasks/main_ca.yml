@@ -19,3 +19,4 @@
   loop_control:
     loop_var: ca
   when: pki_create_ca | bool
+  run_once: true

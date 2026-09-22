@@ -14,7 +14,7 @@ molecule_packages:
     - gnutls-utils
     - iproute
 
-pki_setup_host: "{{ inventory_hostname }}"
+pki_setup_host: "{{ groups['all'][0] }}"
 
 functional_ca_name_1: "ExampleCorpRoot"
 

@@ -7,7 +7,12 @@ driver:
   name: docker
 
 platforms:
-  - name: "pki-${MOLECULE_SCENARIO_NAME}"
+  - name: "pki-${MOLECULE_SCENARIO_NAME}-1"
+    image: "${DOCKER_REGISTRY:-quay.io/gotmax23}/${DOCKER_IMAGE_TAG:-debian-systemd:trixie}"
+    command: ${DOCKER_COMMAND:-""}
+    pre_build_image: true
+    privileged: true
+  - name: "pki-${MOLECULE_SCENARIO_NAME}-2"
     image: "${DOCKER_REGISTRY:-quay.io/gotmax23}/${DOCKER_IMAGE_TAG:-debian-systemd:trixie}"
     command: ${DOCKER_COMMAND:-""}
     pre_build_image: true
