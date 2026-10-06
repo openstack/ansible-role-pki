@@ -35,7 +35,6 @@ pki_setup_host: "{{ inventory_hostname }}"
 pki_backend: hashi_vault
 
 functional_ca_name_1: "ExampleCorpRoot"
-
 pki_authorities:
   - name: "{{ functional_ca_name_1 }}"
     cn: "Example Corp Root CA"
@@ -92,6 +91,7 @@ foo_authorities_variable:
 # install the root CA certificate
 pki_install_ca:
   - name: "ExampleCorpRoot"
+    vault_path: pki_root
 
 # Custom CA install search pattern
 pki_search_install_ca_pattern: "foo_install_ca_"
@@ -106,7 +106,7 @@ pki_certificates:
     cn: "{{ ansible_facts['hostname'] }}"
     san:
       dns:
-        - "{{ ansible_facts['hostname']}}"
+        - "{{ ansible_facts['hostname'] }}"
 
 # Custom certificate generation search pattern
 pki_search_certificates_pattern: "foo_certificates_"

@@ -69,6 +69,10 @@ pki_search_authorities_pattern: "pki_authorities_"
 #   - src: /opt/my-ca/MyRoot.crt
 #     filename: /etc/ssl/certs/MyRoot.crt
 #
+#   # CA intermediate certificate from Vault PKI where CA root is not managed by OSA
+#   - name: VaultCA
+#     vault_path: pki_int
+
 pki_install_ca: []
 
 # Variable name pattern to search ansible vars for other certificate definitions

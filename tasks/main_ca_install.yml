@@ -14,9 +14,14 @@
 # limitations under the License.
 
 - name: Install certificate authorities
-  ansible.builtin.include_tasks: "{{ ca_backend | default(pki_backend) }}/install_ca.yml"
+  ansible.builtin.include_tasks: "{{ ca.backend
+    | default(_backend_lookup)
+    | default(pki_backend) }}/install_ca.yml"
   loop: "{{ _pki_install_ca_defs }}"
   loop_control:
     loop_var: ca
   vars:
-    ca_backend: "{{ (_pki_ca_defs | selectattr('name', 'equalto', ca.name) | map(attribute='backend') | first) }}"
+    _backend_lookup: "{{ _pki_ca_defs
+      | selectattr('name', 'equalto', ca.name)
+      | map(attribute='backend')
+      | first }}"
