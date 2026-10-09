@@ -15,6 +15,8 @@
 - name: Authenticate to vault
   vars:
     ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
+  when:
+    - lookup('env', 'VAULT_TOKEN') | length == 0
   community.hashi_vault.vault_login:
     url: "{{ pki_hashi_vault_host }}"
     auth_method: "{{ pki_hashi_vault_auth_method }}"
@@ -28,3 +30,16 @@
   register: vault_login_data
   changed_when: false
   delegate_to: "{{ pki_setup_host }}"
+  no_log: true
+
+- name: Set token from VAULT_TOKEN env variable
+  vars:
+    _vault_token_env: "{{ lookup('env', 'VAULT_TOKEN') }}"
+  ansible.builtin.set_fact:
+    vault_login_data:
+      login:
+        auth:
+          client_token: "{{ _vault_token_env }}"
+  when:
+    - _vault_token_env | length > 0
+  no_log: true
