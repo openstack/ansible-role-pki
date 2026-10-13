@@ -72,6 +72,7 @@ pki_search_authorities_pattern: "pki_authorities_"
 #   # CA intermediate certificate from Vault PKI where CA root is not managed by OSA
 #   - name: VaultCA
 #     vault_path: pki_int
+#     vault_cert_type: ca_chain
 
 pki_install_ca: []
 

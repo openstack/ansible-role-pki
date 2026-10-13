@@ -24,13 +24,12 @@
       | selectattr('name', 'equalto', ca.name)
       | map(attribute='vault_path', default='pki_vault')
       | first) }}/cert/ca"
-    defined_cert_path: "{{ ca.vault_path | default('pki_vault') }}/cert/ca"
+    defined_cert_path: "{{ ca.vault_path | default('pki_vault') ~ '/cert/' ~ ca.vault_cert_type | default('ca') }}"
   delegate_to: "{{ pki_setup_host }}"
   community.hashi_vault.vault_read:
     url: "{{ pki_hashi_vault_host }}"
     token: "{{ vault_login_data.login.auth.client_token }}"
-    path: "{{ ca.vault_path is defined
-      | ternary(defined_cert_path, fallback_cert_path) }}"
+    path: "{{ ca.vault_path is defined | ternary(defined_cert_path, fallback_cert_path) }}"
   register: ca_cert
 
 - name: Copy CA certificate to target host ({{ ca.name }})
