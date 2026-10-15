@@ -163,3 +163,16 @@
         that:
           - (_functional_chain_1_dest.not_after | to_datetime('%Y%m%d%H%M%S%fZ') - now()).days == 3649
           - (_functional_chain_2_dest.not_after | to_datetime('%Y%m%d%H%M%S%fZ') - now()).days == 29
+
+    - name: Assert certificates have expected CN, SAN, and are distinct
+      ansible.builtin.assert:
+        that:
+          # Verify Common Names
+          - _functional_chain_1_dest.subject.commonName == ansible_facts['hostname']
+          - _functional_chain_2_dest.subject.commonName == ansible_facts['hostname']
+          # Verify Subject Alternative Names
+          - "'DNS:' ~ ansible_facts['hostname'] in _functional_chain_1_dest.subject_alt_name"
+          - "'DNS:' ~ ansible_facts['hostname'] in _functional_chain_2_dest.subject_alt_name"
+          # Verify distinctness: Cert 1 and Cert 2 must NOT share the same content/keys
+          - _functional_chain_1_dest.serial_number != _functional_chain_2_dest.serial_number
+          - _functional_chain_1_dest.public_key != _functional_chain_2_dest.public_key

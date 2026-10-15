@@ -12,33 +12,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Check if certificate files exist ({{ cert.name }})
+- name: Check if certificate files exist
   ansible.builtin.stat:
-    path: "{{ item }}"
-  loop: "{{ pki_matching_install_certificates | map(attribute='dest') }}"
+    path: "{{ item.dest }}"
+  loop: "{{ _backend_install_certs }}"
+  loop_control:
+    label: "{{ item.dest }}"
   register: stat_results
 
-- name: Determine if certificate needs to be generated ({{ cert.name }})
-  ansible.builtin.set_fact:
-    generate_certificate: true
-  when: stat_results.results | selectattr('stat.exists', 'equalto', false) | list | length > 0
-
-- name: Create certificate {{ cert.name }}
-  when: (generate_certificate is defined) or (pki_regen_cert == cert.name) or ((pki_regen_cert | lower) == 'true')
+- name: Create certificates
+  vars:
+    _regen_all: "{{ (pki_regen_cert | string | lower) == 'true' }}"
+    _missing_cert_names: "{{ stat_results.results | default([]) | rejectattr('stat.exists') | map(attribute='item.name') | list }}"
+    _target_cert_names: "{{ _missing_cert_names + ((pki_regen_cert is string and pki_regen_cert | length > 0) | ternary([pki_regen_cert], [])) }}"
+    _vault_certs_to_generate: "{{ _regen_all | ternary(_backend_certs, _backend_certs | selectattr('name', 'in', _target_cert_names)) }}"
+  when:
+    - _vault_certs_to_generate | length > 0
   block:
-    - name: Create certificate destination directories ({{ cert.name }})
+    - name: Create certificate destination directories
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
         mode: "0755"
-      loop: "{{ pki_matching_install_certificates | map(attribute='dest') | map('dirname') | unique }}"
+      loop: >-
+        {{
+          _backend_install_certs
+          | selectattr('name', 'in', _vault_certs_to_generate
+          | map(attribute='name'))
+          | map(attribute='dest')
+          | map('dirname')
+          | list
+          | unique
+        }}
 
     - name: Authenticate to {{ pki_hashi_vault_host }}
-      ansible.builtin.include_tasks: "{{ cert.backend | default(pki_backend) }}/authenticate.yml"
+      ansible.builtin.include_tasks: hashi_vault/authenticate.yml
       when:
         - vault_login_data is not defined
 
-    - name: Generate certificate {{ cert.name }}
+    - name: Generate certificates via Vault PKI
       vars:
         ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
       delegate_to: "{{ pki_setup_host }}"
@@ -56,11 +68,22 @@
         format: "{{ cert.format | default(omit) }}"
         private_key_format: "{{ cert.key_format | default(omit) }}"
         engine_mount_point: "{{ cert.engine_mount_point | default(pki_hashi_vault_engine_mount_point) }}"
+      loop: "{{ _vault_certs_to_generate }}"
+      loop_control:
+        loop_var: cert
+        label: "{{ cert.name }}"
       register: cert_data
 
-    - name: Write certificate data ({{ cert.name }})
+    - name: Write certificate data
       vars:
-        # match user-provided cert types with the hashi_vault internal types
+        _vault_cert_data_map: |-
+          {% set map = {} -%}
+          {% for result in (cert_data.results | default([])) %}
+          {%   if result.data is defined and result.data.data is defined %}
+          {%     set _ = map.update({result.cert.name: result.data.data}) %}
+          {%   endif %}
+          {% endfor %}
+          {{ map }}
         _format:
           "certificate": ['certificate']
           "certificate_chain": ['certificate', 'ca_chain']
@@ -75,12 +98,12 @@
         # NOTE: Blank string is added as last element of the list to make sure that newline is added and the end of
         #       file. It's required when when other roles(like haproxy or zookeper) combine cert, ca_chain and private
         #       key into a single file.
-        content: "{{ _format[item.type] | map('extract', cert_data.data.data) | flatten | join('\n') ~ '\n' }}"
+        content: "{{ _format[item.type] | map('extract', _vault_cert_data_map[item.name]) | flatten | join('\n') ~ '\n' }}"
         dest: "{{ item.dest }}"
         owner: "{{ _owner }}"
         group: "{{ _group }}"
-        mode : "{{ _mode }}"
-      loop: "{{ pki_matching_install_certificates }}"
+        mode: "{{ _mode }}"
+      loop: "{{ _backend_install_certs | selectattr('name', 'in', _vault_certs_to_generate | map(attribute='name')) | list }}"
       loop_control:
         label: >-
           name: {{ item.name }},
