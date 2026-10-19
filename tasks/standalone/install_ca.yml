@@ -14,21 +14,33 @@
 # limitations under the License.
 
 - name: Slurp up CA certificates from pki setup host ({{ pki_setup_host }})
+  vars:
+    ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
   delegate_to: "{{ pki_setup_host }}"
   ansible.builtin.slurp:
     src: "{{ ca.src | default(pki_dir ~ '/roots/' ~ ca.name ~ '/certs/' ~ ca.name ~ '.crt') }}"
-  register: _ca_slurp
+  loop: "{{ _backend_install_ca }}"
+  loop_control:
+    label: "{{ ca.name }}"
+    loop_var: ca
+  register: _ca_slurp_results
   run_once: true
   ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Copy CA certificates to target host
   ansible.builtin.copy:
-    content: "{{ _ca_slurp.content | b64decode }}"
-    dest: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ ca.filename | default(ca.name ~ '.crt') }}"
+    content: "{{ slurp_res.content | b64decode }}"
+    dest: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ slurp_res.ca.filename | default(slurp_res.ca.name ~ '.crt') }}"
+    mode: "0644"
+  loop: "{{ _ca_slurp_results.results }}"
+  loop_control:
+    label: "{{ slurp_res.ca.name }}"
+    loop_var: slurp_res
   register: ca_copy
   ignore_errors: "{{ ansible_check_mode }}"
 
-- name: Update CA store
+- name: Update CA store  # noqa: no-handler
   ansible.builtin.command: "{{ pki_ca_install_command[ansible_facts['pkg_mgr']] }}"
+  changed_when: true
   when:
     - ca_copy is changed
