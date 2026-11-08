@@ -20,23 +20,65 @@
       dnf: /etc/pki/ca-trust/source/anchors/
   tasks:
     # Check that certificate authorities are installed (or absent) at the correct path
-    - ansible.builtin.stat:
+    - name: Check status of {{ functional_ca_name_1 }}
+      ansible.builtin.stat:
         path: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ functional_ca_name_1 }}.crt"
       register: ca_1_stat
 
-    - ansible.builtin.stat:
+    - name: Check status of ExampleCorpCAChain
+      ansible.builtin.stat:
+        path: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/ExampleCorpCAChain.crt"
+      register: ca_chain_stat
+
+    - name: Check status of {{ functional_ca_name_2 }}
+      ansible.builtin.stat:
         path: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ functional_ca_name_2 }}.crt"
       register: ca_2_stat
 
-    - ansible.builtin.stat:
+    - name: Check status of {{ functional_ca_name_3 }}
+      ansible.builtin.stat:
         path: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ functional_ca_name_3 }}.crt"
       register: ca_3_stat
 
-    - ansible.builtin.assert:
+    - name: Assert CA installation status
+      ansible.builtin.assert:
         that:
           - ca_1_stat.stat.exists
+          - ca_chain_stat.stat.exists
           - not ca_2_stat.stat.exists
           - ca_3_stat.stat.exists
+
+    - name: Slurp ExampleCorpCAChain certificate
+      ansible.builtin.slurp:
+        src: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/ExampleCorpCAChain.crt"
+      register: ca_chain_raw
+
+    - name: Verify that ExampleCorpCAChain produces a certificate chain
+      vars:
+        _ca_chain_content: "{{ ca_chain_raw.content | b64decode }}"
+      ansible.builtin.assert:
+        that:
+          - (_ca_chain_content | regex_findall('BEGIN CERTIFICATE') | length) > 1
+
+    - name: Validate that ExampleCorpCAChain is a valid certificate chain
+      ansible.builtin.command:
+        argv:
+          - certtool
+          - -e
+          - --infile
+          - "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/ExampleCorpCAChain.crt"
+      changed_when: false
+
+    - name: Verify that ExampleCorpCAChain contains ExampleCorpIntermediate and ExampleCorpRoot # noqa: risky-shell-pipe
+      ansible.builtin.shell:
+        cmd: >-
+          certtool --certificate-info --infile "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/ExampleCorpCAChain.crt"
+          | grep 'Subject:'
+          | grep "{{ item }}"
+      changed_when: false
+      loop:
+        - "Example Corp Openstack Infrastructure Intermediate CA"
+        - "Example Corp Root CA"
 
     # Check that certificates are installed (or absent) at the correct path
     - ansible.builtin.stat:

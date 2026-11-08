@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Introduced an optional key ``vault_cert_type`` for the
+    ``pki_install_ca`` list of mappings. Can be used to override
+    fetched Certificate Authority from vault to also include a
+    trust chain.

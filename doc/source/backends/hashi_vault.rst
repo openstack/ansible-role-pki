@@ -176,6 +176,10 @@ pki_install_ca
    * - vault_path
      - 𐄂
      - PKI mount path on the vault server
+   * - vault_cert_type
+     - 𐄂
+     - (Default: ``ca``). Type of the certificate to fetch from the server. Possible options:
+       ``ca``, ``ca_chain``, ``crl`` or certificate serial.
    * - backend
      - 𐄂
      - Backend to use when searching for ca certificate file

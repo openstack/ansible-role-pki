@@ -92,6 +92,11 @@ foo_authorities_variable:
 pki_install_ca:
   - name: "ExampleCorpRoot"
     vault_path: pki_root
+  - name: "ExampleCorpIntermediate"
+    vault_path: pki_int
+  - name: "ExampleCorpCAChain"
+    vault_path: pki_int
+    vault_cert_type: ca_chain
 
 # Custom CA install search pattern
 pki_search_install_ca_pattern: "foo_install_ca_"
