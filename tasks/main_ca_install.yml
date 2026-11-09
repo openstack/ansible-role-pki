@@ -13,15 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Install certificate authorities
-  ansible.builtin.include_tasks: "{{ ca.backend
-    | default(_backend_lookup)
-    | default(pki_backend) }}/install_ca.yml"
-  loop: "{{ _pki_install_ca_defs }}"
-  loop_control:
-    loop_var: ca
+- name: Install standalone certificate authorities
+  ansible.builtin.include_tasks: standalone/install_ca.yml
   vars:
-    _backend_lookup: "{{ _pki_ca_defs
-      | selectattr('name', 'equalto', ca.name)
-      | map(attribute='backend')
-      | first }}"
+    _backend_install_ca: "{{ _pki_install_ca_defs | selectattr('backend', 'equalto', 'standalone') | list }}"
+  when:
+    - _backend_install_ca | length > 0
+
+- name: Install hashi_vault certificate authorities
+  ansible.builtin.include_tasks: hashi_vault/install_ca.yml
+  vars:
+    _backend_install_ca: "{{ _pki_install_ca_defs | selectattr('backend', 'equalto', 'hashi_vault') | list }}"
+  when:
+    - _backend_install_ca | length > 0

@@ -19,7 +19,14 @@ _pki_ca_defs: "{{ pki_authorities | union(_pki_ca_candidates) | openstack.osa.re
 
 # Gather CA installation definitions from hostvars
 _pki_install_ca_candidates: "{{ query('vars', *query('varnames', '^' ~ pki_search_install_ca_pattern)) | flatten(levels=1) }}"
-_pki_install_ca_defs: "{{ pki_install_ca | union(_pki_install_ca_candidates) | openstack.osa.rejectattr('condition', 'false') }}"
+_pki_install_ca_defs: |-
+  {% set cas = [] %}
+  {% for ca in pki_install_ca | union(_pki_install_ca_candidates) | openstack.osa.rejectattr('condition', 'false') %}
+  {%   set matching_ca = _pki_ca_defs | selectattr('name', 'defined') | selectattr('name', 'equalto', ca.name) | first | default({}) %}
+  {%   set backend = ca.backend | default(matching_ca.backend | default(pki_backend)) %}
+  {%   set _ = cas.append(ca | combine({'backend': backend})) %}
+  {% endfor %}
+  {{ cas }}
 
 # Gather certificate definitions from hostvars
 _pki_certificates_candidates: "{{ query('vars', *query('varnames', '^' ~ pki_search_certificates_pattern)) | flatten(levels=1) }}"

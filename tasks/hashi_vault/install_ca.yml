@@ -17,7 +17,7 @@
   when:
     - vault_login_data is not defined
 
-- name: Fetch CA cert ({{ ca.name }})
+- name: Fetch CA cert
   vars:
     ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
     fallback_cert_path: "{{ (_pki_ca_defs
@@ -30,17 +30,26 @@
     url: "{{ pki_hashi_vault_host }}"
     token: "{{ vault_login_data.login.auth.client_token }}"
     path: "{{ ca.vault_path is defined | ternary(defined_cert_path, fallback_cert_path) }}"
-  register: ca_cert
+  loop: "{{ _backend_install_ca }}"
+  loop_control:
+    label: "{{ ca.name }}"
+    loop_var: ca
+  register: ca_cert_results
 
-- name: Copy CA certificate to target host ({{ ca.name }})
+- name: Copy CA certificate to target host
   ansible.builtin.copy:
-    content: "{{ ca_cert.data.data.certificate }}"
-    dest: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ ca.filename | default(ca.name ~ '.crt') }}"
+    content: "{{ ca_res.data.data.certificate }}"
+    dest: "{{ pki_trust_store_location[ansible_facts['pkg_mgr']] }}/{{ ca_res.ca.filename | default(ca_res.ca.name ~ '.crt') }}"
     mode: '0644'
+  loop: "{{ ca_cert_results.results }}"
+  loop_control:
+    label: "{{ ca_res.ca.name }}"
+    loop_var: ca_res
   register: ca_copy
   ignore_errors: "{{ ansible_check_mode }}"
 
-- name: Update CA store
+- name: Update CA store  # noqa: no-handler
   ansible.builtin.command: "{{ pki_ca_install_command[ansible_facts['pkg_mgr']] }}"
+  changed_when: true
   when:
     - ca_copy is changed
