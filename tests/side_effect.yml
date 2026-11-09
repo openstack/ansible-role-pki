@@ -1,0 +1,68 @@
+---
+- name: Test certificate regeneration via side_effect
+  hosts: all
+  tasks:
+    - name: Fetch initial certificate info for cert 1 and cert 2
+      community.crypto.x509_certificate_info:
+        path: "{{ item }}"
+      loop:
+        - "{{ functional_install_cert_1_dest }}"
+        - "{{ functional_install_cert_2_dest }}"
+      register: _certs_before
+
+    - name: Re-run pki role to regenerate single certificate by name
+      ansible.builtin.include_role:
+        name: pki
+      vars:
+        pki_regen_cert: "{{ ansible_facts['hostname'] }}_1"
+
+    - name: Fetch certificate info after single cert regeneration
+      community.crypto.x509_certificate_info:
+        path: "{{ item }}"
+      loop:
+        - "{{ functional_install_cert_1_dest }}"
+        - "{{ functional_install_cert_2_dest }}"
+      register: _certs_after_single
+
+    - name: Verify only cert 1 was regenerated and cert 2 remained unchanged
+      vars:
+        _c1_before: "{{ _certs_before.results[0] }}"
+        _c2_before: "{{ _certs_before.results[1] }}"
+        _c1_after: "{{ _certs_after_single.results[0] }}"
+        _c2_after: "{{ _certs_after_single.results[1] }}"
+      ansible.builtin.assert:
+        that:
+          # Cert 1 must have new serial number and public key
+          - _c1_before.serial_number != _c1_after.serial_number
+          - _c1_before.public_key != _c1_after.public_key
+          # Cert 2 must NOT have changed
+          - _c2_before.serial_number == _c2_after.serial_number
+          - _c2_before.public_key == _c2_after.public_key
+
+    - name: Re-run pki role to regenerate all certificates with boolean true
+      ansible.builtin.include_role:
+        name: pki
+      vars:
+        pki_regen_cert: true
+
+    - name: Fetch certificate info after all certs regeneration
+      community.crypto.x509_certificate_info:
+        path: "{{ item }}"
+      loop:
+        - "{{ functional_install_cert_1_dest }}"
+        - "{{ functional_install_cert_2_dest }}"
+      register: _certs_after_all
+
+    - name: Verify all certificates were regenerated with new serials and public keys
+      vars:
+        _c1_prev: "{{ _certs_after_single.results[0] }}"
+        _c2_prev: "{{ _certs_after_single.results[1] }}"
+        _c1_all: "{{ _certs_after_all.results[0] }}"
+        _c2_all: "{{ _certs_after_all.results[1] }}"
+      ansible.builtin.assert:
+        that:
+          # Cert 1 and Cert 2 must both have new serials and public keys
+          - _c1_prev.serial_number != _c1_all.serial_number
+          - _c1_prev.public_key != _c1_all.public_key
+          - _c2_prev.serial_number != _c2_all.serial_number
+          - _c2_prev.public_key != _c2_all.public_key

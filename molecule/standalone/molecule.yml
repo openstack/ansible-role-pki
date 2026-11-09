@@ -25,6 +25,7 @@ provisioner:
   playbooks:
     prepare: prepare.yml
     converge: ../../tests/test.yml
+    side_effect: ../../tests/side_effect.yml
     verify: verify.yml
   inventory:
     links:

@@ -184,3 +184,31 @@
       loop:
         - {'cert': "{{ functional_install_cert_1_dest }}", 'issuer': 'Example Corp Openstack Infrastructure Intermediate CA' }
         - {'cert': "{{ functional_install_cert_4_dest }}", 'issuer': 'FooAutorityInstalled' }
+
+    - name: Fetch deployed certificate details
+      community.crypto.x509_certificate_info:
+        path: "{{ item }}"
+      loop:
+        - "{{ functional_install_cert_1_dest }}"
+        - "{{ functional_install_cert_2_dest }}"
+        - "{{ functional_install_cert_4_dest }}"
+      register: _deployed_cert_infos
+
+    - name: Assert certificates have expected CN, SAN, and are distinct
+      vars:
+        _c1: "{{ _deployed_cert_infos.results[0] }}"
+        _c2: "{{ _deployed_cert_infos.results[1] }}"
+        _c4: "{{ _deployed_cert_infos.results[2] }}"
+      ansible.builtin.assert:
+        that:
+          # Verify Common Names
+          - _c1.subject.commonName == ansible_facts['hostname']
+          - _c2.subject.commonName == ansible_facts['hostname']
+          - _c4.subject.commonName == ansible_facts['hostname']
+          # Verify Subject Alternative Names
+          - "'DNS:' ~ ansible_facts['hostname'] in _c1.subject_alt_name"
+          - "'DNS:' ~ ansible_facts['hostname'] in _c2.subject_alt_name"
+          - "'DNS:' ~ ansible_facts['hostname'] in _c4.subject_alt_name"
+          # Verify distinctness: Cert 1 and Cert 2 must NOT share the same content
+          - _c1.serial_number != _c2.serial_number
+          - _c1.public_key != _c2.public_key

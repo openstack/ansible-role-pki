@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Slurp up server certificate from pki setup host ({{ pki_setup_host }})
+- name: Slurp server certificates from pki setup host ({{ pki_setup_host }})
   vars:
     # location for the certificates on the PKI host
     cert_dir: "{{ pki_dir }}/certs"
@@ -33,26 +33,34 @@
   delegate_to: "{{ pki_setup_host }}"
   ansible.builtin.slurp:
     src: "{{ _use_src | ternary(install_cert.src, _source) }}"
-  register: _cert_slurp
+  loop: "{{ _backend_install_certs }}"
+  loop_control:
+    label: "{{ install_cert.dest }}"
+    loop_var: install_cert
+  register: _cert_slurp_results
   ignore_errors: "{{ ansible_check_mode }}"
 
-- name: Create certificate destination directory ({{ install_cert.dest }})
+- name: Create certificate destination directories
   ansible.builtin.file:
-    path: "{{ install_cert.dest | dirname }}"
+    path: "{{ item }}"
     state: directory
     mode: "{{ pki_cert_dir_mode }}"
+  loop: "{{ _backend_install_certs | map(attribute='dest') | map('dirname') | unique | list }}"
 
-- name: Install Server certificate to targets ({{ install_cert.dest }})
+- name: Install server certificates to targets
   vars:
-    _mode : "{{ install_cert.mode | d(pki_file_mode[install_cert.type | d('certificate')]) }}"
-    _owner: "{{ install_cert.owner | default(pki_install_owner) }}"
-    _group: "{{ install_cert.group | default(pki_install_group) }}"
+    _mode: "{{ item.install_cert.mode | d(pki_file_mode[item.install_cert.type | default('certificate')]) }}"
+    _owner: "{{ item.install_cert.owner | default(pki_install_owner) }}"
+    _group: "{{ item.install_cert.group | default(pki_install_group) }}"
   ansible.builtin.copy:
-    content: "{{ _cert_slurp.content | b64decode }}"
-    dest: "{{ install_cert.dest }}"
+    content: "{{ item.content | b64decode }}"
+    dest: "{{ item.install_cert.dest }}"
     owner: "{{ _owner }}"
     group: "{{ _group }}"
     mode: "{{ _mode }}"
+  loop: "{{ _cert_slurp_results.results | default([]) }}"
+  loop_control:
+    label: "{{ item.install_cert.dest }}"
   ignore_errors: "{{ ansible_check_mode }}"
   notify:
     - "{{ pki_handler_cert_installed }}"

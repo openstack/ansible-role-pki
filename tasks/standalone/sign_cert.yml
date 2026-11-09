@@ -13,26 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Create certificate {{ cert.name }}
+- name: Generate certificate
   vars:
     ansible_python_interpreter: "{{ pki_setup_host_python_interpreter }}"
-    _cert_file: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '.crt' }}"
-    _cert_full_chain_file: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '-chain.crt' }}"
-    _cert_ca_bundle_file: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '-ca_bundle.crt' }}"
-    _ca_file: "{{ pki_dir ~ '/roots/' ~ cert.signed_by ~ '/certs/' ~ cert.signed_by ~ '.crt' }}"
-    _ca_bundle_file: "{{ pki_dir ~ '/roots/' ~ cert.signed_by ~ '/certs/' ~ cert.signed_by ~ '-chain.crt' }}"
   delegate_to: "{{ pki_setup_host }}"
   block:
-    - name: Generate certificate private key for {{ cert.name }}
+    - name: Generate certificate private keys
       community.crypto.openssl_privatekey:
         path: "{{ cert_dir ~ '/private/' ~ cert.name ~ '.key.pem' }}"
         passphrase: "{{ cert.key_passphrase | default(omit) }}"
         cipher: "{{ ('key_passphrase' in cert and cert.key_passphrase) | ternary('auto', omit) }}"
-        force: "{{ pki_regen_cert == cert.name or ((pki_regen_cert | lower) == 'true') }}"
+        force: "{{ pki_regen_cert == cert.name or ((pki_regen_cert | string | lower) == 'true') }}"
         format: "{{ cert.key_format | default(omit) }}"
-      register: cert_privkey
+      loop: "{{ _backend_certs }}"
+      loop_control:
+        label: "{{ cert.name }}"
+        loop_var: cert
 
-    - name: Create the CSR for {{ cert.name }}
+    - name: Create CSRs
       vars:
         generated_san: >-
           {{
@@ -42,7 +40,7 @@
           }}
       community.crypto.openssl_csr:
         path: "{{ cert_dir ~ '/csr/' ~ cert.name ~ '.csr' }}"
-        privatekey_path: "{{ cert_privkey.filename }}"
+        privatekey_path: "{{ cert_dir ~ '/private/' ~ cert.name ~ '.key.pem' }}"
         privatekey_passphrase: "{{ cert.key_passphrase | default(omit) }}"
         common_name: "{{ cert.cn | default(omit) }}"
         basic_constraints_critical: true
@@ -58,46 +56,80 @@
         organization_name: "{{ cert.organization_name | default(omit) }}"
         organizational_unit_name: "{{ cert.organization_unit_name | default(omit) }}"
         subject: "{{ cert.subject | default(omit) }}"
-        force: "{{ pki_regen_cert == cert.name or ((pki_regen_cert | lower) == 'true') }}"
-      register: cert_csr
+        force: "{{ pki_regen_cert == cert.name or ((pki_regen_cert | string | lower) == 'true') }}"
+      loop: "{{ _backend_certs }}"
+      loop_control:
+        label: "{{ cert.name }}"
+        loop_var: cert
+      register: cert_csr_results
 
-    - name: Sign the certificate CSR for {{ cert.name }}
+    - name: Sign the certificate CSR
+      vars:
+        _cert_file: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '.crt' }}"
+        _ca_file: "{{ pki_dir ~ '/roots/' ~ cert.signed_by ~ '/certs/' ~ cert.signed_by ~ '.crt' }}"
+        _force_regen: "{{ pki_regen_cert == cert.name or ((pki_regen_cert | string | lower) == 'true') }}"
       community.crypto.x509_certificate:
         path: "{{ _cert_file }}"
-        csr_path: "{{ cert_csr.filename }}"
+        csr_path: "{{ cert_dir ~ '/csr/' ~ cert.name ~ '.csr' }}"
         ownca_path: "{{ _ca_file }}"
         ownca_privatekey_path: "{{ pki_dir ~ '/roots/' ~ cert.signed_by ~ '/private/' ~ cert.signed_by ~ '.key.pem' }}"
         ownca_privatekey_passphrase: "{{ cert.ownca_key_passphrase | default(omit) }}"
         ownca_not_after: "{{ ('ttl' in cert) | ternary('+' ~ cert.get('ttl'), omit) }}"
         provider: ownca
-        force: "{{ pki_regen_cert == cert.name or ((pki_regen_cert | lower) == 'true') }}"
-      register: cert_crt
+        force: "{{ _force_regen }}"
+      loop: "{{ _backend_certs }}"
+      loop_control:
+        label: "{{ cert.name }}"
+        loop_var: cert
+      register: cert_crt_results
       when:
         - cert.provider == 'ownca'
-        - cert_csr is changed
       notify:
         - "{{ pki_handler_cert_changed }}"
       ignore_errors: "{{ ansible_check_mode }}"
 
-    - name: Get certificate info for {{ cert.name }}
+    - name: Get certificate info  # noqa: no-handler
       community.crypto.x509_certificate_info:
-        path: "{{ cert_crt.filename }}"
-      register: cert_info
-      when: cert_crt is changed
+        path: "{{ cert_item.filename }}"
+      loop: "{{ cert_crt_results.results | default([]) | selectattr('changed') | list }}"
+      loop_control:
+        label: "{{ cert_item.cert.name }}"
+        loop_var: cert_item
+      register: cert_info_results
 
-    - name: Save certificate info for {{ cert.name }}
+    - name: Save certificate info
       ansible.builtin.copy:
-        content: "{{ cert_info | to_nice_yaml }}"
-        dest: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '.info' }}"
-      when: cert_crt is changed
+        content: "{{ cert_info_item | to_nice_yaml }}"
+        dest: "{{ cert_dir ~ '/certs/' ~ cert_info_item.cert_item.cert.name ~ '.info' }}"
+        mode: "0644"
+      loop: "{{ cert_info_results.results | default([]) }}"
+      loop_control:
+        label: "{{ cert_info_item.cert_item.cert.name }}"
+        loop_var: cert_info_item
 
-    - name: Create certificate ca bundle for {{ cert.name }}
+    - name: Create certificate ca bundle
+      vars:
+        _ca_bundle_file: "{{ pki_dir ~ '/roots/' ~ cert.signed_by ~ '/certs/' ~ cert.signed_by ~ '-chain.crt' }}"
+        _cert_ca_bundle_file: "{{ cert_dir ~ '/certs/' ~ cert.name ~ '-ca_bundle.crt' }}"
       ansible.builtin.copy:
         src: "{{ _ca_bundle_file }}"
         remote_src: true
         dest: "{{ _cert_ca_bundle_file }}"
+        mode: "0644"
+      loop: "{{ _backend_certs }}"
+      loop_control:
+        label: "{{ cert.name }}"
+        loop_var: cert
 
-    - name: Create certificate full chain for {{ cert.name }}
-      shell:
+    - name: Create certificate full chain
+      vars:
+        _cert_file: "{{ cert_dir ~ '/certs/' ~ cert_item.cert.name ~ '.crt' }}"
+        _ca_file: "{{ pki_dir ~ '/roots/' ~ cert_item.cert.signed_by ~ '/certs/' ~ cert_item.cert.signed_by ~ '.crt' }}"
+        _cert_full_chain_file: "{{ cert_dir ~ '/certs/' ~ cert_item.cert.name ~ '-chain.crt' }}"
+      ansible.builtin.shell:
         cmd: "cat {{ _cert_file }} {{ _ca_file }} > {{ _cert_full_chain_file }}"
-        creates: "{{ (cert_crt is not changed) | ternary(_cert_full_chain_file, omit) }}"
+        creates: "{{ cert_item.changed | ternary(omit, _cert_full_chain_file) }}"
+      loop: "{{ cert_crt_results.results | default([]) }}"
+      loop_control:
+        label: "{{ cert_item.cert.name }}"
+        loop_var: cert_item
